@@ -43,9 +43,7 @@ export const Sidebar = () => {
                     <p className="text-xs font-bold uppercase text-bk-blue/60 tracking-wider">
                         Hệ thống
                     </p>
-                    <p className="mt-1 text-sm font-bold dark:text-white">
-                        BK Volunteers
-                    </p>
+                    <p className="mt-1 text-sm font-bold">BK Volunteers</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                         Phiên bản 1.2.0
                     </p>

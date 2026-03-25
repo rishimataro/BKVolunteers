@@ -23,7 +23,7 @@ export const LandingRoute = () => {
                             alt="BK Volunteers Logo"
                             className="size-8 object-contain"
                         />
-                        <span>BK Volunteers</span>
+                        <span>BK Volunteers</span>{' '}
                     </div>
                     <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
                         <a

@@ -75,15 +75,31 @@ export const AppRouter = () => {
                 },
                 {
                     path: paths.app.users.path,
-                    element: <div>Users (Authenticated)</div>,
+                    lazy: () =>
+                        import('@/app/routes/app/users.tsx').then((m) => ({
+                            Component: m.UsersRoute,
+                        })),
                 },
                 {
                     path: paths.app.profile.path,
-                    element: <div>Profile (Authenticated)</div>,
+                    lazy: () =>
+                        import('@/app/routes/app/profile.tsx').then((m) => ({
+                            Component: m.ProfileRoute,
+                        })),
                 },
                 {
                     path: paths.app.campaigns.path,
-                    element: <div>Demo</div>,
+                    lazy: () =>
+                        import('@/app/routes/app/campaigns.tsx').then((m) => ({
+                            Component: m.CampaignsRoute,
+                        })),
+                },
+                {
+                    path: paths.app.settings.path,
+                    lazy: () =>
+                        import('@/app/routes/app/settings.tsx').then((m) => ({
+                            Component: m.SettingsRoute,
+                        })),
                 },
             ],
         },
