@@ -9,6 +9,7 @@ import type {
     ForgotPasswordInput,
     ResetPasswordInput,
 } from '../types';
+import { HttpStatus } from '@/types/http';
 
 export const getUser = async (): Promise<User | null> => {
     try {
@@ -16,7 +17,8 @@ export const getUser = async (): Promise<User | null> => {
     } catch (error) {
         if (
             Axios.isAxiosError(error) &&
-            (error.response?.status === 401 || error.response?.status === 404)
+            (error.response?.status === HttpStatus.UNAUTHORIZED ||
+                error.response?.status === HttpStatus.NOT_FOUND)
         ) {
             return null;
         }
@@ -40,7 +42,6 @@ export const registerWithEmailAndPassword = (
     return api.post('/auth/signup', data);
 };
 
-// Các tính năng bổ sung khớp với Backend API mới
 export const forgotPassword = (
     data: ForgotPasswordInput,
 ): Promise<GeneralResponse> => {
