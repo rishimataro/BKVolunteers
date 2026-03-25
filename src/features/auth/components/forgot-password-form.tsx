@@ -1,0 +1,65 @@
+import * as React from 'react';
+import { useMutation } from '@tanstack/react-query';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Link } from '@/components/ui/link';
+import { useNotifications } from '@/components/ui/notifications';
+import { paths } from '@/config/paths';
+
+import { forgotPassword } from '../api/auth';
+
+export const ForgotPasswordForm = () => {
+    const { addNotification } = useNotifications();
+    const mutation = useMutation({
+        mutationFn: forgotPassword,
+        onSuccess: (data) => {
+            addNotification({
+                type: 'success',
+                title: 'Success',
+                message: data.message || 'Check your email for the reset link',
+            });
+        },
+    });
+
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const email = formData.get('email') as string;
+        mutation.mutate({ email });
+    };
+
+    return (
+        <div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="mt-1">
+                        <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={mutation.isPending}
+                    >
+                        {mutation.isPending ? 'Sending...' : 'Send Reset Link'}
+                    </Button>
+                </div>
+            </form>
+
+            <div className="mt-6 text-center">
+                <Link to={paths.auth.login.getHref()}>Back to login</Link>
+            </div>
+        </div>
+    );
+};

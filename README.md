@@ -1,73 +1,114 @@
-# React + TypeScript + Vite
+# React TS Starter Kit
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A production-ready React starter kit built with React 19, TypeScript, and Vite. Designed for scalability, maintainability, and a great developer experience.
 
-Currently, two official plugins are available:
+## 🚀 Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19 & TypeScript**: Latest stable versions with React Compiler enabled.
+- **Vite**: Ultra-fast dev server and optimized builds.
+- **Feature-First Architecture**: Organized by domain (Auth, Users, etc.) for scalability.
+- **State Management**:
+    - **Server State**: [TanStack Query v5](https://tanstack.com/query/latest) for robust data fetching and caching.
+    - **Client State**: [Zustand](https://github.com/pmndrs/zustand) for simple, global state.
+- **Routing**: [React Router 7](https://reactrouter.com/en/main) with lazy loading and protected routes.
+- **Authentication**: Pre-configured auth flow with JWT, refresh tokens, and persistence via `react-query-auth`.
+- **UI Components**: Built with [Tailwind CSS](https://tailwindcss.com/) and [Shadcn UI](https://ui.shadcn.com/) (using Radix UI).
+- **Form Management**: [React Hook Form](https://react-hook-form.com/) with [Zod](https://zod.dev/) validation.
+- **Testing**:
+    - **Unit/Integration**: [Vitest](https://vitest.dev/) with React Testing Library.
+    - **E2E**: [Playwright](https://playwright.dev/).
+    - **Mocking**: [MSW (Mock Service Worker)](https://mswjs.io/) for API mocking.
+- **DX Optimized**:
+    - [Plop](https://plopjs.com/) for code generation.
+    - [Husky](https://typicode.github.io/husky/) & [Lint-staged](https://github.com/okonet/lint-staged) for pre-commit hooks.
+    - Custom VS Code settings and extensions.
 
-## React Compiler
+## 📂 Directory Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+├── app/                 # App entry, providers, global router
+│   ├── routes/          # Route definitions (importing features)
+│   ├── provider.tsx     # Global context providers (Query, Theme, Auth)
+│   └── index.tsx        # Root component
+├── components/          # Truly global, reusable UI (Shadcn)
+│   ├── ui/              # Base atoms (Button, Input)
+│   └── layouts/         # Shared layouts (DashboardLayout, AuthLayout)
+├── features/            # Business logic grouped by domain
+│   └── [feature]/
+│       ├── api/         # React Query hooks + Axios calls
+│       ├── components/  # Feature-specific UI
+│       ├── hooks/       # Feature-specific logic
+│       ├── types/       # Feature types/schemas
+│       └── index.ts     # Public API (what other features can see)
+├── lib/                 # Core utilities (api-client, utils)
+├── config/              # Environment vars, constants, paths
+├── testing/             # Test setup, MSW handlers, mocks
+└── types/               # Global/Shared TypeScript types
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Getting Started
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Prerequisites
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js (v20+)
+- pnpm (recommended)
+
+### Installation
+
+1. Clone the repository.
+2. Install dependencies:
+    ```bash
+    pnpm install
+    ```
+3. Set up environment variables:
+    ```bash
+    cp .env.example .env
+    ```
+
+### Development
+
+Start the development server:
+
+```bash
+pnpm dev
 ```
+
+### Build
+
+Build for production:
+
+```bash
+pnpm build
+```
+
+### Testing
+
+```bash
+# Unit tests
+pnpm test
+
+# E2E tests
+pnpm test:e2e
+
+# Vitest UI
+pnpm test:ui
+```
+
+### Code Generation
+
+Generate new components or features:
+
+```bash
+pnpm generate
+```
+
+## 🛡️ Security
+
+- **Environment Validation**: Zod-validated environment variables at runtime.
+- **API Client**: Axios interceptors for automatic JWT handling and refresh logic.
+- **Protected Routes**: Easy-to-use `<ProtectedRoute />` component.
+
+## 📄 License
+
+MIT

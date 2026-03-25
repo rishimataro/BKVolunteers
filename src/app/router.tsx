@@ -1,0 +1,97 @@
+import {
+    createBrowserRouter,
+    RouterProvider,
+    Navigate,
+    Outlet,
+} from 'react-router';
+
+import { DashboardLayout } from '@/components/layouts';
+import { paths } from '@/config/paths';
+import { ProtectedRoute } from '@/features/auth';
+
+export const AppRouter = () => {
+    const router = createBrowserRouter([
+        {
+            path: '/',
+            lazy: async () => {
+                const { LandingRoute } = await import('./routes/landing');
+                return { Component: LandingRoute };
+            },
+        },
+        {
+            path: paths.auth.login.path,
+            lazy: async () => {
+                const { LoginPage } = await import('./routes/auth/login');
+                return { Component: LoginPage };
+            },
+        },
+        {
+            path: paths.auth.register.path,
+            lazy: async () => {
+                const { RegisterPage } = await import('./routes/auth/register');
+                return { Component: RegisterPage };
+            },
+        },
+        {
+            path: paths.auth.forgotPassword.path,
+            lazy: async () => {
+                const { ForgotPasswordPage } =
+                    await import('./routes/auth/forgot-password');
+                return { Component: ForgotPasswordPage };
+            },
+        },
+        {
+            path: paths.auth.resetPassword.path,
+            lazy: async () => {
+                const { ResetPasswordPage } =
+                    await import('./routes/auth/reset-password');
+                return { Component: ResetPasswordPage };
+            },
+        },
+        {
+            path: paths.auth.verifyEmail.path,
+            lazy: async () => {
+                const { VerifyEmailPage } =
+                    await import('./routes/auth/verify-email');
+                return { Component: VerifyEmailPage };
+            },
+        },
+        {
+            path: paths.app.root.path,
+            element: (
+                <ProtectedRoute>
+                    <DashboardLayout>
+                        <Outlet />
+                    </DashboardLayout>
+                </ProtectedRoute>
+            ),
+            children: [
+                {
+                    index: true,
+                    lazy: () =>
+                        import('@/app/routes/app/dashboard.tsx').then((m) => ({
+                            Component: m.DashboardRoute,
+                        })),
+                },
+                {
+                    path: paths.app.users.path,
+                    element: <div>Users (Authenticated)</div>,
+                },
+                {
+                    path: paths.app.profile.path,
+                    element: <div>Profile (Authenticated)</div>,
+                },
+                {
+                    path: paths.app.campaigns.path,
+                    element: <div>Demo</div>,
+                },
+            ],
+        },
+        {
+            path: '*',
+            element: <Navigate to="/" />,
+        },
+    ]);
+
+    return <RouterProvider router={router} />;
+};
