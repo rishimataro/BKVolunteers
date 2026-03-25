@@ -88,7 +88,12 @@ export const UserMenu = () => {
                                     Hồ sơ của tôi
                                 </span>
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="group/item rounded-xl px-3 py-2.5 cursor-pointer transition-colors focus:bg-bk-blue/5">
+                            <DropdownMenuItem
+                                onClick={() =>
+                                    navigate(paths.app.settings.getHref())
+                                }
+                                className="group/item rounded-xl px-3 py-2.5 cursor-pointer transition-colors focus:bg-bk-blue/5"
+                            >
                                 <Settings className="mr-3 size-4.5 text-muted-foreground transition-colors group-focus/item:text-bk-blue" />
                                 <span className="font-semibold">
                                     Cài đặt hệ thống

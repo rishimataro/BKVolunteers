@@ -1,7 +1,7 @@
-import { Menu, Sun, Moon, Bell, Search } from 'lucide-react';
+import { Menu, Sun, Moon, Bell } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import * as React from 'react';
-import { NavLink, useNavigation } from 'react-router';
+import { NavLink, useNavigation, useLocation } from 'react-router';
 
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -61,6 +61,12 @@ const ThemeToggle = () => {
 
 export const Header = () => {
     const navigation = useNavigationItems();
+    const { pathname } = useLocation();
+
+    // Find current navigation item based on path
+    const currentItem = navigation.find((item) => item.to === pathname);
+    // Special case for root/dashboard since it might be empty or "/"
+    const pageTitle = currentItem?.name || 'Tổng quan';
 
     return (
         <header className="sticky top-0 z-40 flex h-20 items-center justify-between bg-background/80 px-4 backdrop-blur-md sm:px-8">
@@ -105,16 +111,11 @@ export const Header = () => {
                 <Logo collapsed />
             </div>
 
-            {/* Search Bar Placeholder */}
+            {/* Dynamic Page Title */}
             <div className="hidden md:flex flex-1 max-w-md">
-                <div className="relative w-full group">
-                    <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-bk-blue" />
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm nhanh..."
-                        className="h-11 w-full rounded-full border bg-muted/30 pl-11 pr-4 text-sm transition-all focus:bg-background focus:outline-none focus:ring-2 focus:ring-bk-blue/20"
-                    />
-                </div>
+                <h2 className="text-xl font-bold text-foreground">
+                    {pageTitle}
+                </h2>
             </div>
 
             {/* Right Side Actions */}
