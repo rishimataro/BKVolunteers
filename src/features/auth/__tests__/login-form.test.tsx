@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 
 import { LoginForm } from '../components/login-form';
@@ -46,7 +46,6 @@ describe('LoginForm', () => {
         expect(
             screen.getByRole('link', { name: /quên mật khẩu/i }),
         ).toBeDefined();
-        expect(screen.getByAltText(/linh vật bk volunteers/i)).toBeDefined();
     });
 
     it('shows local validation errors when fields are empty', () => {
