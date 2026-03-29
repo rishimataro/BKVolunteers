@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router';
 import { ProtectedRoute, Authorization } from '../lib/authorization';
 import { ROLES } from '../lib/authorization-hooks';
@@ -12,7 +12,7 @@ vi.mock('../lib/auth-provider', () => ({
 
 describe('ProtectedRoute', () => {
     it('redirects to login if user is not authenticated', () => {
-        (useUser as vi.Mock).mockReturnValue({ data: null });
+        (useUser as Mock).mockReturnValue({ data: null });
 
         render(
             <MemoryRouter initialEntries={['/app']}>
@@ -40,7 +40,7 @@ describe('ProtectedRoute', () => {
     });
 
     it('renders children if user is authenticated', () => {
-        (useUser as vi.Mock).mockReturnValue({
+        (useUser as Mock).mockReturnValue({
             data: { id: '1', role: ROLES.USER },
         });
 
@@ -59,7 +59,7 @@ describe('ProtectedRoute', () => {
 
 describe('Authorization', () => {
     it('renders children if role is allowed', () => {
-        (useUser as vi.Mock).mockReturnValue({
+        (useUser as Mock).mockReturnValue({
             data: { id: '1', role: ROLES.ADMIN },
         });
 
@@ -73,7 +73,7 @@ describe('Authorization', () => {
     });
 
     it('renders forbiddenFallback if role is not allowed', () => {
-        (useUser as vi.Mock).mockReturnValue({
+        (useUser as Mock).mockReturnValue({
             data: { id: '1', role: ROLES.USER },
         });
 
