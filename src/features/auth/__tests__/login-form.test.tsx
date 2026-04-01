@@ -67,9 +67,9 @@ describe('LoginForm', () => {
         fireEvent.click(screen.getByRole('button', { name: /^đăng nhập$/i }));
 
         await waitFor(() => {
-            expect(screen.getByText(/email is required/i)).toBeDefined();
+            expect(screen.getByText(/email là bắt buộc/i)).toBeDefined();
             expect(
-                screen.getByText(/password must be at least 6 characters/i),
+                screen.getByText(/mật khẩu phải có ít nhất 6 ký tự/i),
             ).toBeDefined();
         });
     });

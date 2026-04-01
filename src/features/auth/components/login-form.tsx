@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
 import { Loader2, Mail, Lock, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { useNotifications } from '@/components/ui/notifications';
 import { paths } from '@/config/paths';
 import { HttpStatus } from '@/types/http';
 
+import { ApiError } from '@/lib/fetch-client';
 import { sendVerificationEmail } from '../api/auth';
 import { useLogin } from '../lib/auth-provider';
 import { loginInputSchema, type LoginInput } from '../types';
@@ -55,14 +55,14 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         try {
             await login.mutateAsync(data);
         } catch (error) {
-            const axiosError = error as AxiosError;
-            const apiData = axiosError.response?.data as {
+            const apiError = error as ApiError;
+            const errorData = apiError.data as {
                 message?: string;
                 error?: string;
             };
 
             const msg =
-                apiData?.message ||
+                errorData?.message ||
                 'Đăng nhập thất bại. Vui lòng kiểm tra lại.';
 
             addNotification({
@@ -72,9 +72,9 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
             });
 
             if (
-                axiosError.response?.status === HttpStatus.UNAUTHORIZED &&
-                (apiData?.message?.includes('verified') ||
-                    apiData?.error === 'EmailNotVerified')
+                apiError.status === HttpStatus.UNAUTHORIZED &&
+                (errorData?.message?.includes('verified') ||
+                    errorData?.error === 'EmailNotVerified')
             ) {
                 setIsEmailUnverified(true);
                 setUnverifiedEmail(data.email);

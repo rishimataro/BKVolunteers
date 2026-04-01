@@ -32,7 +32,7 @@ const authConfig = {
     },
     loginFn: async (data: LoginInput) => {
         const response = await loginWithEmailAndPassword(data);
-        // Response already unwrapped to .data by axios interceptor
+        // Response already unwrapped to .data by fetch client interceptor
         // response is { accessToken: string, user: User }
         useAuthStore.getState().setAuth(response.user, response.accessToken);
         return response.user;

@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Link } from 'react-router';
-import type { AxiosError } from 'axios';
 
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { paths } from '@/config/paths';
 
+import { ApiError } from '@/lib/fetch-client';
 import { verifyEmail } from '../api/auth';
 
 type VerifyEmailProps = {
@@ -20,7 +20,8 @@ export const VerifyEmail = ({ token }: VerifyEmailProps) => {
 
     React.useEffect(() => {
         mutation.mutate();
-    }, [token, mutation]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token]);
 
     if (mutation.isPending) {
         return (
@@ -32,15 +33,18 @@ export const VerifyEmail = ({ token }: VerifyEmailProps) => {
     }
 
     if (mutation.isError) {
-        const error = mutation.error as AxiosError<{ message?: string }>;
+        const error = mutation.error as ApiError;
         return (
             <div className="text-center p-8">
                 <h3 className="text-lg font-bold text-red-600 mb-2">
                     Verification Failed
                 </h3>
                 <p className="mb-6">
-                    {error?.response?.data?.message ||
-                        'The verification link is invalid or has expired.'}
+                    {error.data instanceof Object &&
+                    'message' in (error.data as Record<string, unknown>)
+                        ? ((error.data as Record<string, unknown>)
+                              .message as string)
+                        : 'The verification link is invalid or has expired.'}
                 </p>
                 <Link to={paths.auth.login.getHref()}>
                     <Button>Back to login</Button>

@@ -27,7 +27,7 @@ The codebase follows a **Feature-First Architecture**, organizing code by domain
 - `src/app/`: App entry point, global context providers (`provider.tsx`), and the main router.
 - `src/app/routes/`: Route definitions, often importing components from features.
 - `src/features/`: Domain-specific business logic. Each feature should follow this structure:
-    - `api/`: React Query hooks and Axios/API calls.
+    - `api/`: React Query hooks and Fetch API calls.
     - `components/`: UI components specific to the feature.
     - `hooks/`: Feature-specific logic/hooks.
     - `types/`: Domain-specific TypeScript types and schemas (Zod).
@@ -42,6 +42,6 @@ The codebase follows a **Feature-First Architecture**, organizing code by domain
 - **React 19 & TypeScript**: Uses the latest React features and React Compiler.
 - **State Management**: [TanStack Query v5](https://tanstack.com/query/latest) for server state; [Zustand](https://github.com/pmndrs/zustand) for client state.
 - **Routing**: [React Router 7](https://reactrouter.com/en/main).
-- **Authentication**: Managed via `react-query-auth` with JWT handling in Axios interceptors (`src/lib/api-clients.ts`).
+- **Authentication**: Managed via `react-query-auth` with JWT handling in Fetch API interceptors (`src/lib/fetch-client.ts`).
 - **Forms**: [React Hook Form](https://react-hook-form.com/) with [Zod](https://zod.dev/) for validation.
 - **Mocking**: [MSW (Mock Service Worker)](https://mswjs.io/) for API mocking during development and testing.
