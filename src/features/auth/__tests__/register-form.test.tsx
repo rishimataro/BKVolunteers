@@ -59,7 +59,7 @@ describe('RegisterForm', () => {
         expect(screen.getByLabelText('Tên')).toBeDefined();
         expect(screen.getByLabelText('Họ và tên đệm')).toBeDefined();
         expect(screen.getByLabelText('Tên đăng nhập')).toBeDefined();
-        expect(screen.getByLabelText('Địa chỉ Email')).toBeDefined();
+        expect(screen.getByLabelText('Mã số sinh viên (Email)')).toBeDefined();
         expect(screen.getByLabelText('Mật khẩu')).toBeDefined();
         expect(screen.getByLabelText('Xác nhận mật khẩu')).toBeDefined();
         expect(screen.getByRole('button', { name: /đăng ký/i })).toBeDefined();
@@ -77,8 +77,8 @@ describe('RegisterForm', () => {
         fireEvent.change(screen.getByLabelText('Tên đăng nhập'), {
             target: { value: 'testuser' },
         });
-        fireEvent.change(screen.getByLabelText('Địa chỉ Email'), {
-            target: { value: 'test@example.com' },
+        fireEvent.change(screen.getByLabelText('Mã số sinh viên (Email)'), {
+            target: { value: '102230109@sv1.dut.udn.vn' },
         });
         fireEvent.change(screen.getByLabelText('Mật khẩu'), {
             target: { value: 'password123' },
@@ -107,8 +107,8 @@ describe('RegisterForm', () => {
         fireEvent.change(screen.getByLabelText('Tên đăng nhập'), {
             target: { value: 'testuser' },
         });
-        fireEvent.change(screen.getByLabelText('Địa chỉ Email'), {
-            target: { value: 'test@sv.dut.udn.vn' },
+        fireEvent.change(screen.getByLabelText('Mã số sinh viên (Email)'), {
+            target: { value: '102230109@sv1.dut.udn.vn' },
         });
         fireEvent.change(screen.getByLabelText('Mật khẩu'), {
             target: { value: 'password123' },
@@ -124,7 +124,7 @@ describe('RegisterForm', () => {
                 firstName: 'John',
                 lastName: 'Doe',
                 username: 'testuser',
-                email: 'test@sv.dut.udn.vn',
+                email: '102230109@sv1.dut.udn.vn',
                 password: 'password123',
                 passwordConfirmed: 'password123',
             });

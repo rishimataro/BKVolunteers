@@ -45,3 +45,43 @@ The codebase follows a **Feature-First Architecture**, organizing code by domain
 - **Authentication**: Managed via `react-query-auth` with JWT handling in Fetch API interceptors (`src/lib/fetch-client.ts`).
 - **Forms**: [React Hook Form](https://react-hook-form.com/) with [Zod](https://zod.dev/) for validation.
 - **Mocking**: [MSW (Mock Service Worker)](https://mswjs.io/) for API mocking during development and testing.
+
+## API Client
+
+The app uses a custom fetch-based HTTP client instead of axios:
+
+- `src/lib/fetch-client.ts`: Fetch API wrapper with:
+    - Automatic JWT token handling
+    - Token refresh on 401 responses
+    - Request queue for concurrent 401 handling
+    - ApiError class for error handling
+
+### Usage
+
+```typescript
+import { api, ApiError } from '@/lib/fetch-client';
+
+// GET
+const user = await api.get<User>('/auth/me');
+
+// POST
+const response = await api.post<AuthResponse>('/auth/login', {
+    email,
+    password,
+});
+```
+
+## Testing
+
+### MSW Mocks
+
+MSW mocks are defined in `src/testing/mocks.ts` and include handlers for:
+
+- Auth: login, signup, logout, refresh, verify email
+- Password: forgot-password, reset-password
+- Users: list, get by id
+- Campaigns: list, get by id
+- Activities: list, create
+- Error simulation: 403, 500 responses
+
+Enable mocking by setting `ENABLE_API_MOCKING=true` in environment.

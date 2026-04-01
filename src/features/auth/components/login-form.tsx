@@ -135,7 +135,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
                         className="block text-gray-700 text-sm font-bold mb-1.5"
                         htmlFor="email"
                     >
-                        Tên đăng nhập (Email)
+                        Mã số sinh viên (Email)
                     </Label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -145,7 +145,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
                             id="email"
                             type="email"
                             className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-300 text-gray-800 placeholder:text-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-bk-blue focus:border-bk-blue transition-all"
-                            placeholder="admin@dut.udn.vn"
+                            placeholder="102230109@sv1.dut.udn.vn"
                             {...register('email')}
                             disabled={login.isPending}
                         />

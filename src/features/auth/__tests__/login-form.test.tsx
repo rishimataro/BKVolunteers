@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router';
 
 import { LoginForm } from '../components/login-form';
 import { useLogin } from '../lib/auth-provider';
+import { loginInputSchema } from '../types';
 
 // Mock dependencies
 vi.mock('../lib/auth-provider', () => ({
@@ -54,7 +55,9 @@ describe('LoginForm', () => {
     it('renders correctly', () => {
         renderForm();
 
-        expect(screen.getByLabelText(/tên đăng nhập \(email\)/i)).toBeDefined();
+        expect(
+            screen.getByLabelText(/mã số sinh viên \(email\)/i),
+        ).toBeDefined();
         expect(screen.getByLabelText(/mật khẩu/i)).toBeDefined();
         expect(
             screen.getByRole('button', { name: /^đăng nhập$/i }),
@@ -77,8 +80,8 @@ describe('LoginForm', () => {
     it('calls login.mutateAsync with correct data', async () => {
         renderForm();
 
-        fireEvent.change(screen.getByLabelText(/tên đăng nhập \(email\)/i), {
-            target: { value: 'test@dut.udn.vn' },
+        fireEvent.change(screen.getByLabelText(/mã số sinh viên \(email\)/i), {
+            target: { value: '102230109@sv1.dut.udn.vn' },
         });
         fireEvent.change(screen.getByLabelText(/mật khẩu/i), {
             target: { value: 'password123' },
@@ -88,9 +91,59 @@ describe('LoginForm', () => {
 
         await waitFor(() => {
             expect(mutateAsync).toHaveBeenCalledWith({
-                email: 'test@dut.udn.vn',
+                email: '102230109@sv1.dut.udn.vn',
                 password: 'password123',
             });
         });
     });
+});
+
+describe('loginInputSchema - Mã số sinh viên DUT validation', () => {
+    const validEmails = [
+        '102230109@sv1.dut.udn.vn',
+        '112250001@sv1.dut.udn.vn',
+        '192299999@sv1.dut.udn.vn',
+    ];
+
+    const invalidEmails = [
+        { email: 'invalid@sv1.dut.udn.vn', error: 'phải có format' },
+        { email: '123@sv1.dut.udn.vn', error: 'phải có format' }, // too short
+        { email: 'abcdefgh@sv1.dut.udn.vn', error: 'phải có format' }, // regex check fails
+        { email: '102230109@dut.udn.vn', error: 'phải có format' }, // wrong domain
+        { email: '102230109@sv.dut.udn.vn', error: 'phải có format' }, // wrong domain
+    ];
+
+    it.each(validEmails)('accepts valid student email: %s', (email) => {
+        const result = loginInputSchema.safeParse({
+            email,
+            password: 'password123',
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it.each(invalidEmails.map((i) => i.email))(
+        'rejects invalid email: %s',
+        (email) => {
+            const result = loginInputSchema.safeParse({
+                email,
+                password: 'password123',
+            });
+            expect(result.success).toBe(false);
+        },
+    );
+
+    it.each(invalidEmails.map((i) => ({ email: i.email, error: i.error })))(
+        'shows correct error message for: %s',
+        ({ email, error }) => {
+            const result = loginInputSchema.safeParse({
+                email,
+                password: 'password123',
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const errorMessage = result.error.issues[0]?.message || '';
+                expect(errorMessage).toContain(error);
+            }
+        },
+    );
 });

@@ -115,7 +115,7 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
                         className="block text-gray-700 text-sm font-bold mb-1.5"
                         htmlFor="email"
                     >
-                        Địa chỉ Email
+                        Mã số sinh viên (Email)
                     </Label>
                     <div className="mt-1">
                         <Input
@@ -123,6 +123,7 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
                             type="email"
                             className="w-full bg-gray-50 border border-gray-300 text-gray-800 placeholder:text-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-bk-blue focus:border-bk-blue transition-all"
                             autoComplete="email"
+                            placeholder="102230109@sv1.dut.udn.vn"
                             {...registerField('email')}
                         />
                         {errors.email && (
