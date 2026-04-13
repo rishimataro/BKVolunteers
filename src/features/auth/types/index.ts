@@ -1,15 +1,18 @@
 import { z } from 'zod';
 
 export const loginInputSchema = z.object({
-    email: z
-        .string()
-        .min(1, 'Email là bắt buộc')
-        .email('Email không hợp lệ')
-        .endsWith('dut.udn.vn', 'Email phải kết thúc bằng @sv[số].dut.udn.vn'),
-    password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
+    username: z.string().min(1, 'Tên đăng nhập là bắt buộc'),
+    password: z.string().min(1, 'Mật khẩu là bắt buộc'),
 });
 
 export type LoginInput = z.infer<typeof loginInputSchema>;
+
+export const managerLoginInputSchema = z.object({
+    identifier: z.string().min(1, 'Username hoặc email là bắt buộc'),
+    password: z.string().min(1, 'Mật khẩu là bắt buộc'),
+});
+
+export type ManagerLoginInput = z.infer<typeof managerLoginInputSchema>;
 
 export const registerInputSchema = z
     .object({

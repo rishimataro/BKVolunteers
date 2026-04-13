@@ -1,4 +1,4 @@
-import {
+﻿import {
     createBrowserRouter,
     RouterProvider,
     Navigate,
@@ -7,7 +7,7 @@ import {
 
 import { DashboardLayout } from '@/components/layouts';
 import { paths } from '@/config/paths';
-import { ProtectedRoute } from '@/features/auth';
+import { ManagerOnlyRoute, ProtectedRoute } from '@/features/auth';
 
 export const AppRouter = () => {
     const router = createBrowserRouter([
@@ -23,6 +23,14 @@ export const AppRouter = () => {
             lazy: async () => {
                 const { LoginPage } = await import('./routes/auth/login');
                 return { Component: LoginPage };
+            },
+        },
+        {
+            path: paths.manager.login.path,
+            lazy: async () => {
+                const { ManagerLoginPage } =
+                    await import('./routes/auth/manager-login');
+                return { Component: ManagerLoginPage };
             },
         },
         {
@@ -60,39 +68,22 @@ export const AppRouter = () => {
             ),
             children: [
                 {
-                    index: true,
-                    lazy: () =>
-                        import('@/app/routes/app/dashboard.tsx').then((m) => ({
-                            Component: m.DashboardRoute,
-                        })),
-                },
-                {
-                    path: paths.app.users.path,
-                    lazy: () =>
-                        import('@/app/routes/app/users.tsx').then((m) => ({
-                            Component: m.UsersRoute,
-                        })),
-                },
-                {
-                    path: paths.app.profile.path,
-                    lazy: () =>
-                        import('@/app/routes/app/profile.tsx').then((m) => ({
-                            Component: m.ProfileRoute,
-                        })),
-                },
-                {
-                    path: paths.app.campaigns.path,
-                    lazy: () =>
-                        import('@/app/routes/app/campaigns.tsx').then((m) => ({
-                            Component: m.CampaignsRoute,
-                        })),
-                },
-                {
-                    path: paths.app.settings.path,
-                    lazy: () =>
-                        import('@/app/routes/app/settings.tsx').then((m) => ({
-                            Component: m.SettingsRoute,
-                        })),
+                    element: (
+                        <ManagerOnlyRoute>
+                            <Outlet />
+                        </ManagerOnlyRoute>
+                    ),
+                    children: [
+                        {
+                            path: paths.app.campaignCreate.path,
+                            lazy: () =>
+                                import('@/app/routes/app/lcd_clb/campaign_manage/campaign-create').then(
+                                    (m) => ({
+                                        Component: m.CampaignCreateRoute,
+                                    }),
+                                ),
+                        },
+                    ],
                 },
             ],
         },

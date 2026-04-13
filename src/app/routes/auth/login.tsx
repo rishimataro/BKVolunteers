@@ -2,22 +2,23 @@ import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { Head } from '@/components/seo';
-import { paths } from '@/config/paths';
-import { LoginForm, useUser } from '@/features/auth';
+import { LoginForm, getPostLoginPath, useUser } from '@/features/auth';
+import type { User } from '@/types/api';
 
 export const LoginPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const redirectTo = searchParams.get('redirectTo');
     const user = useUser();
+    const currentUser = user.data as User | null | undefined;
 
     useEffect(() => {
-        if (user.data) {
-            navigate(redirectTo || paths.app.dashboard.getHref(), {
+        if (currentUser) {
+            navigate(getPostLoginPath(currentUser, redirectTo), {
                 replace: true,
             });
         }
-    }, [navigate, redirectTo, user.data]);
+    }, [currentUser, navigate, redirectTo]);
 
     return (
         <>

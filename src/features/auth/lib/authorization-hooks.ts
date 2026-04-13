@@ -1,9 +1,13 @@
-import React from 'react';
+﻿import React from 'react';
+
+import type { User } from '@/types/api';
+
 import { useUser } from './auth-provider';
 
 export const ROLES = {
     ADMIN: 'ADMIN',
     USER: 'USER',
+    STUDENT: 'STUDENT',
 } as const;
 
 export type RoleTypes = keyof typeof ROLES;
@@ -14,15 +18,17 @@ export const POLICIES = () => {
 
 export const useAuthorization = () => {
     const user = useUser();
+    const currentUser = user.data as User | null | undefined;
 
     const checkAccess = React.useCallback(
         ({ allowedRoles }: { allowedRoles: RoleTypes[] }) => {
-            if (allowedRoles && allowedRoles.length > 0 && user.data) {
-                return allowedRoles?.includes(user.data.role);
+            if (allowedRoles && allowedRoles.length > 0 && currentUser) {
+                return allowedRoles.includes(currentUser.role);
             }
             return true;
         },
-        [user.data],
+        [currentUser],
     );
-    return { checkAccess, role: user.data?.role };
+
+    return { checkAccess, role: currentUser?.role };
 };

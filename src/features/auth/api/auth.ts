@@ -1,14 +1,15 @@
 import Axios from 'axios';
 
 import { api } from '@/lib/api-clients';
-import type { AuthResponse, User, GeneralResponse } from '@/types/api';
+import type { AuthResponse, GeneralResponse, User } from '@/types/api';
+import { HttpStatus } from '@/types/http';
 
 import type {
-    LoginInput,
     ForgotPasswordInput,
+    LoginInput,
+    ManagerLoginInput,
     ResetPasswordInput,
 } from '../types';
-import { HttpStatus } from '@/types/http';
 
 export const getUser = async (): Promise<User | null> => {
     try {
@@ -21,6 +22,7 @@ export const getUser = async (): Promise<User | null> => {
         ) {
             return null;
         }
+
         throw error;
     }
 };
@@ -29,10 +31,16 @@ export const logout = (): Promise<void> => {
     return api.post('/auth/logout');
 };
 
-export const loginWithEmailAndPassword = (
+export const loginWithUsernameAndPassword = (
     data: LoginInput,
 ): Promise<AuthResponse> => {
     return api.post('/auth/login', data);
+};
+
+export const loginManagerWithIdentifierAndPassword = (
+    data: ManagerLoginInput,
+): Promise<AuthResponse> => {
+    return api.post('/auth/manager/login', data);
 };
 
 export const forgotPassword = (

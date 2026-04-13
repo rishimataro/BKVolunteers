@@ -1,4 +1,4 @@
-import Axios, { type InternalAxiosRequestConfig, type AxiosError } from 'axios';
+import Axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
 import { useNotifications } from '@/components/ui/notifications';
 import { env } from '@/config/env';
@@ -12,6 +12,12 @@ type PromiseHandler = {
     reject: (error: unknown) => void;
 };
 
+const AUTH_REFRESH_EXCLUDED_PATHS = new Set([
+    '/auth/login',
+    '/auth/manager/login',
+    '/auth/refresh',
+]);
+
 let failedQueue: PromiseHandler[] = [];
 
 const processQueue = (error: unknown, token: string | null = null) => {
@@ -24,6 +30,41 @@ const processQueue = (error: unknown, token: string | null = null) => {
     });
 
     failedQueue = [];
+};
+
+const normalizeRequestPath = (url?: string) => {
+    if (!url) {
+        return '';
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+        try {
+            return new URL(url).pathname.replace(/^.*\/api\/v1/, '');
+        } catch {
+            return url;
+        }
+    }
+
+    return url.replace(/^.*\/api\/v1/, '');
+};
+
+const shouldAttemptTokenRefresh = (
+    error: AxiosError,
+    request: (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined,
+) => {
+    if (error.response?.status !== HttpStatus.UNAUTHORIZED || !request) {
+        return false;
+    }
+
+    if (request._retry) {
+        return false;
+    }
+
+    if (!useAuthStore.getState().accessToken) {
+        return false;
+    }
+
+    return !AUTH_REFRESH_EXCLUDED_PATHS.has(normalizeRequestPath(request.url));
 };
 
 export const setAccessToken = (token: string | null) => {
@@ -65,11 +106,7 @@ api.interceptors.response.use(
         const data = error.response?.data as { message?: string } | undefined;
         const message = data?.message || error.message;
 
-        if (
-            error.response?.status === HttpStatus.UNAUTHORIZED &&
-            !originalRequest._retry &&
-            originalRequest.url !== '/auth/refresh'
-        ) {
+        if (shouldAttemptTokenRefresh(error, originalRequest)) {
             if (isRefreshing) {
                 return new Promise<string | null>((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -80,9 +117,7 @@ api.interceptors.response.use(
                         }
                         return api(originalRequest);
                     })
-                    .catch((err) => {
-                        return Promise.reject(err);
-                    });
+                    .catch((err) => Promise.reject(err));
             }
 
             originalRequest._retry = true;

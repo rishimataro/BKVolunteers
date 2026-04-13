@@ -1,7 +1,7 @@
-import { Menu, Sun, Moon, Bell } from 'lucide-react';
+﻿import { Bell, Menu, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import * as React from 'react';
-import { NavLink, useNavigation, useLocation } from 'react-router';
+import { NavLink, useLocation, useNavigation } from 'react-router';
 
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
@@ -28,7 +28,7 @@ const Progress = () => {
     if (state !== 'loading') return null;
 
     return (
-        <div className="fixed top-0 left-0 z-[100] h-1 w-full bg-muted">
+        <div className="fixed left-0 top-0 z-[100] h-1 w-full bg-muted">
             <div
                 className="h-full bg-bk-blue transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
@@ -62,16 +62,18 @@ const ThemeToggle = () => {
 export const Header = () => {
     const navigation = useNavigationItems();
     const { pathname } = useLocation();
-
-    // Find current navigation item based on path
-    const currentItem = navigation.find((item) => item.to === pathname);
-    // Special case for root/dashboard since it might be empty or "/"
+    const currentItem = navigation
+        .filter(
+            (item) =>
+                pathname === item.to ||
+                (item.to !== '/app' && pathname.startsWith(`${item.to}/`)),
+        )
+        .sort((left, right) => right.to.length - left.to.length)[0];
     const pageTitle = currentItem?.name || 'Tổng quan';
 
     return (
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between bg-background/80 px-4 backdrop-blur-md sm:px-8">
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-white/50 bg-white/60 px-4 backdrop-blur-md sm:px-8">
             <Progress />
-            {/* Mobile Menu */}
             <div className="flex items-center gap-4 sm:hidden">
                 <Drawer direction="left">
                     <DrawerTrigger asChild>
@@ -83,8 +85,8 @@ export const Header = () => {
                             <Menu className="size-6" />
                         </Button>
                     </DrawerTrigger>
-                    <DrawerContent className="h-full w-[280px] rounded-none border-none p-0 focus:outline-none">
-                        <div className="flex h-20 items-center  px-6 bg-card">
+                    <DrawerContent className="h-full w-[300px] rounded-none border-none bg-white p-0 focus:outline-none">
+                        <div className="flex h-20 items-center px-6">
                             <Logo />
                         </div>
                         <nav className="space-y-2 p-4 pt-6">
@@ -94,15 +96,37 @@ export const Header = () => {
                                     to={item.to}
                                     className={({ isActive }) =>
                                         cn(
-                                            'flex items-center gap-4 rounded-xl px-4 py-3.5 text-base font-semibold transition-all',
+                                            'block rounded-2xl px-4 py-3.5 transition-all',
                                             isActive
                                                 ? 'bg-bk-blue text-white'
-                                                : 'text-muted-foreground hover:bg-muted',
+                                                : 'text-slate-600 hover:bg-slate-50',
                                         )
                                     }
                                 >
-                                    <item.icon className="size-6" />
-                                    <span>{item.name}</span>
+                                    {({ isActive }) => (
+                                        <div className="flex gap-3">
+                                            <item.icon className="mt-0.5 size-5 shrink-0" />
+                                            <div>
+                                                <div className="font-semibold">
+                                                    {item.name}
+                                                </div>
+                                                {item.children && (
+                                                    <div
+                                                        className={cn(
+                                                            'mt-1 text-xs leading-5',
+                                                            isActive
+                                                                ? 'text-white/70'
+                                                                : 'text-slate-500',
+                                                        )}
+                                                    >
+                                                        {item.children.join(
+                                                            ' • ',
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </NavLink>
                             ))}
                         </nav>
@@ -111,16 +135,17 @@ export const Header = () => {
                 <Logo collapsed />
             </div>
 
-            {/* Dynamic Page Title */}
-            <div className="hidden md:flex flex-1 max-w-md">
-                <h2 className="text-xl font-bold text-foreground">
+            <div className="hidden max-w-xl flex-1 md:block">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-bk-blue/60">
+                    Workspace LCĐ/CLB
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-slate-900">
                     {pageTitle}
                 </h2>
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-                <div className="hidden sm:flex items-center gap-2">
+                <div className="hidden items-center gap-2 sm:flex">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -130,9 +155,7 @@ export const Header = () => {
                     </Button>
                     <ThemeToggle />
                 </div>
-
-                <div className="h-8 w-px bg-border mx-1 hidden sm:block"></div>
-
+                <div className="mx-1 hidden h-8 w-px bg-border sm:block" />
                 <UserMenu />
             </div>
         </header>

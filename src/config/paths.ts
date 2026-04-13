@@ -4,6 +4,14 @@ export const paths = {
         getHref: () => '/',
     },
 
+    manager: {
+        login: {
+            path: '/manager/login',
+            getHref: (redirectTo?: string | null | undefined) =>
+                `/manager/login${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`,
+        },
+    },
+
     auth: {
         register: {
             path: '/auth/register',
@@ -38,7 +46,6 @@ export const paths = {
             path: '/app',
             getHref: () => '/app',
         },
-
         dashboard: {
             path: '',
             getHref: () => '/app',
@@ -47,9 +54,25 @@ export const paths = {
             path: 'campaigns',
             getHref: () => '/app/campaigns',
         },
-        users: {
-            path: 'users',
-            getHref: () => '/app/users',
+        campaignCreate: {
+            path: 'campaigns/new',
+            getHref: () => '/app/campaigns/new',
+        },
+        volunteers: {
+            path: 'volunteers',
+            getHref: () => '/app/volunteers',
+        },
+        attendance: {
+            path: 'attendance',
+            getHref: () => '/app/attendance',
+        },
+        certificates: {
+            path: 'certificates',
+            getHref: () => '/app/certificates',
+        },
+        tickets: {
+            path: 'tickets',
+            getHref: () => '/app/tickets',
         },
         profile: {
             path: 'profile',

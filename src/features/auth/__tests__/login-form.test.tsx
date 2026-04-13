@@ -1,16 +1,28 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router';
 
 import { LoginForm } from '../components/login-form';
 
 const addNotification = vi.fn();
+const mutate = vi.fn();
 
 vi.mock('@/components/ui/notifications', () => ({
     useNotifications: vi.fn(() => ({
         addNotification,
     })),
 }));
+
+vi.mock('../lib/auth-provider', async () => {
+    const actual = await vi.importActual('../lib/auth-provider');
+    return {
+        ...actual,
+        useLogin: vi.fn(() => ({
+            mutate,
+            isPending: false,
+        })),
+    };
+});
 
 describe('LoginForm', () => {
     beforeEach(() => {
@@ -25,62 +37,70 @@ describe('LoginForm', () => {
         );
     };
 
-    it('renders the redesigned login form', () => {
-        renderForm();
-
-        expect(
-            screen.getByRole('heading', { name: /đăng nhập/i }),
-        ).toBeDefined();
-        expect(screen.getByLabelText(/tên đăng nhập/i)).toBeDefined();
-        expect(
-            screen.getByLabelText(/mật khẩu/i, { selector: 'input' }),
-        ).toBeDefined();
-        expect(
-            screen.getByRole('button', { name: /^đăng nhập$/i }),
-        ).toBeDefined();
-        expect(
-            screen.getByRole('button', {
-                name: /đăng nhập bằng microsoft/i,
-            }),
-        ).toBeDefined();
-        expect(
-            screen.getByRole('link', { name: /quên mật khẩu/i }),
-        ).toBeDefined();
-    });
-
     it('shows local validation errors when fields are empty', () => {
         renderForm();
 
+        fireEvent.change(screen.getByLabelText(/tên đăng nhập/i), {
+            target: { value: '' },
+        });
+        fireEvent.change(
+            screen.getByLabelText(/mật khẩu/i, { selector: 'input' }),
+            {
+                target: { value: '' },
+            },
+        );
         fireEvent.click(screen.getByRole('button', { name: /^đăng nhập$/i }));
 
         expect(
             screen.getByText(/vui lòng nhập tên đăng nhập\./i),
         ).toBeDefined();
         expect(screen.getByText(/vui lòng nhập mật khẩu\./i)).toBeDefined();
-        expect(addNotification).not.toHaveBeenCalled();
+        expect(mutate).not.toHaveBeenCalled();
     });
 
-    it('shows a placeholder notification instead of calling backend login', () => {
+    it('submits username and password directly to auth login', async () => {
         renderForm();
 
         fireEvent.change(screen.getByLabelText(/tên đăng nhập/i), {
-            target: { value: 'testuser' },
+            target: { value: 'lcd_cntt' },
         });
         fireEvent.change(
             screen.getByLabelText(/mật khẩu/i, { selector: 'input' }),
             {
-                target: { value: 'password123' },
+                target: { value: 'QL@123456' },
             },
         );
 
         fireEvent.click(screen.getByRole('button', { name: /^đăng nhập$/i }));
 
-        expect(addNotification).toHaveBeenCalledWith(
-            expect.objectContaining({
-                type: 'info',
-                title: 'Giao diện đăng nhập',
+        await waitFor(() => {
+            expect(mutate).toHaveBeenCalledWith(
+                {
+                    username: 'lcd_cntt',
+                    password: 'QL@123456',
+                },
+                expect.any(Object),
+            );
+        });
+    });
+
+    it('shows guidance for both student and organizer accounts on the same page', () => {
+        renderForm();
+
+        expect(
+            screen.getByText(
+                /một cổng đăng nhập chung cho sinh viên, đơn vị tổ chức và đoàn trường/i,
+            ),
+        ).toBeDefined();
+        expect(screen.getByText(/đăng nhập bằng mssv/i)).toBeDefined();
+        expect(
+            screen.getByText(/dùng username hoặc email được cấp/i),
+        ).toBeDefined();
+        expect(
+            screen.queryByRole('link', {
+                name: /chuyển sang đăng nhập quản trị/i,
             }),
-        );
+        ).toBeNull();
     });
 
     it('toggles the password field visibility', () => {
@@ -98,28 +118,7 @@ describe('LoginForm', () => {
         fireEvent.click(toggleButton);
         expect(passwordInput.getAttribute('type')).toBe('text');
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: /ẩn mật khẩu/i,
-            }),
-        );
+        fireEvent.click(screen.getByRole('button', { name: /ẩn mật khẩu/i }));
         expect(passwordInput.getAttribute('type')).toBe('password');
-    });
-
-    it('shows placeholder feedback for Microsoft login', () => {
-        renderForm();
-
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: /đăng nhập bằng microsoft/i,
-            }),
-        );
-
-        expect(addNotification).toHaveBeenCalledWith(
-            expect.objectContaining({
-                type: 'info',
-                title: 'Microsoft SSO',
-            }),
-        );
     });
 });
