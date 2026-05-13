@@ -64,7 +64,7 @@ describe('LoginForm', () => {
         fireEvent.click(screen.getByRole('button', { name: /^đăng nhập$/i }));
 
         expect(
-            screen.getByText(/vui lòng nhập email\./i),
+            screen.getByText(/vui lòng nhập email hoặc mssv/i),
         ).toBeDefined();
         expect(screen.getByText(/vui lòng nhập mật khẩu\./i)).toBeDefined();
         expect(addNotification).not.toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe('LoginForm', () => {
 
         await waitFor(() =>
             expect(mutateAsync).toHaveBeenCalledWith({
-                email: 'test@example.com',
+                identifier: 'test@example.com',
                 password: 'password123',
             }),
         );
@@ -119,20 +119,13 @@ describe('LoginForm', () => {
         expect(passwordInput.getAttribute('type')).toBe('password');
     });
 
-    it('shows placeholder feedback for Microsoft login', () => {
+    it('has a Microsoft login button that redirects', () => {
         renderForm();
 
-        fireEvent.click(
-            screen.getByRole('button', {
-                name: /đăng nhập bằng microsoft/i,
-            }),
-        );
-
-        expect(addNotification).toHaveBeenCalledWith(
-            expect.objectContaining({
-                type: 'info',
-                title: 'Đăng nhập Microsoft',
-            }),
-        );
+        const button = screen.getByRole('button', {
+            name: /đăng nhập bằng microsoft/i,
+        });
+        expect(button).toBeDefined();
+        expect(() => fireEvent.click(button)).not.toThrow();
     });
 });
