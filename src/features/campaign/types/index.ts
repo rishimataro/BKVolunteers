@@ -33,6 +33,13 @@ export type ManagedCampaignDetail = {
     start_at: string;
     end_at: string;
     published_at?: string | null;
+    organization?: {
+        id: string;
+        code: string;
+        name: string;
+        type: string;
+        faculty_id?: string | null;
+    } | null;
     modules: Array<{
         id: string;
         type: ModuleType;
@@ -48,6 +55,7 @@ export type ManagedCampaignDetail = {
         module_id?: string | null;
         body: string;
         visibility: string;
+        attachment_url?: string | null;
         created_at: string;
     }>;
 };
@@ -69,15 +77,47 @@ export type ApprovalQueueItem = {
 };
 
 export type FundraisingModuleDetail = {
-    module_id: string;
+    id: string;
     campaign_id: string;
+    type: 'FUNDRAISING' | 'fundraising';
+    title: string;
     status: ModuleStatus;
+    settings_json: Record<string, unknown>;
+    total_raised: number;
+    campaign: {
+        id: string;
+        title: string;
+        slug: string;
+        status: CampaignStatus;
+    };
     config: Record<string, unknown>;
-    progress: {
-        target_amount: number;
-        verified_amount: number;
-        pending_amount: number;
-        percent: number;
+};
+
+export type EventModuleDetail = {
+    id: string;
+    campaign_id: string;
+    type: 'EVENT' | 'event';
+    title: string;
+    description?: string | null;
+    status: ModuleStatus;
+    start_at: string;
+    end_at: string;
+    settings_json: Record<string, unknown>;
+    registration_count: number;
+    approved_count: number;
+    campaign: {
+        id: string;
+        title: string;
+        slug: string;
+        status: CampaignStatus;
+    };
+    config: {
+        location: string;
+        quota: number;
+        registration_required: boolean;
+        checkin_required: boolean;
+        benefits: string[];
+        benefits_text: string;
     };
 };
 
@@ -88,11 +128,33 @@ export type FundraisingDonationItem = {
     donor_name: string;
     amount: number;
     status: DonationStatus;
+    matched_transaction_id?: string | null;
     message?: string | null;
     evidence_url?: string | null;
     created_at: string;
     verified_at?: string | null;
     reject_reason?: string | null;
+};
+
+export type FundraisingTransactionItem = {
+    id: string;
+    provider: string;
+    provider_transaction_id: string;
+    campaign_id?: string | null;
+    module_id?: string | null;
+    amount: number;
+    content?: string | null;
+    account_no?: string | null;
+    transaction_time: string;
+    match_status: 'MATCHED' | 'UNMATCHED';
+    matched_donation_id?: string | null;
+    matched_donation?: {
+        id: string;
+        donor_name?: string | null;
+        amount: number;
+        status: DonationStatus;
+        created_at: string;
+    } | null;
 };
 
 export type ItemTargetItem = {

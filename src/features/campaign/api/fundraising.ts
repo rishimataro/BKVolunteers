@@ -3,13 +3,28 @@ import type { DonationStatus } from '@/types/api';
 import type {
     FundraisingDonationItem,
     FundraisingModuleDetail,
+    FundraisingTransactionItem,
 } from '../types';
-export type { FundraisingDonationItem, FundraisingModuleDetail };
+export type {
+    FundraisingDonationItem,
+    FundraisingModuleDetail,
+    FundraisingTransactionItem,
+};
 
-export const getFundraisingModule = (moduleId: string) =>
-    api.get(
+type FundraisingModuleResponse = Omit<FundraisingModuleDetail, 'config'>;
+
+export const getFundraisingModule = async (
+    moduleId: string,
+): Promise<FundraisingModuleDetail> => {
+    const data = (await api.get(
         `/fundraising/modules/${moduleId}`,
-    ) as Promise<FundraisingModuleDetail>;
+    )) as FundraisingModuleResponse;
+
+    return {
+        ...data,
+        config: data.settings_json ?? {},
+    };
+};
 
 export const createMoneyDonation = (
     moduleId: string,
@@ -35,6 +50,7 @@ export const updateFundraisingConfig = (
     api.patch(`/fundraising/modules/${moduleId}/config`, payload) as Promise<{
         module_id: string;
         config: Record<string, unknown>;
+        status: string;
     }>;
 
 export const getFundraisingDonations = (
@@ -42,13 +58,23 @@ export const getFundraisingDonations = (
     params?: {
         status?: DonationStatus | '';
         q?: string;
+        from?: string;
+        to?: string;
         page?: number;
         limit?: number;
     },
 ) =>
     api.get(`/fundraising/modules/${moduleId}/donations`, {
         params,
-    }) as Promise<FundraisingDonationItem[]>;
+    }) as Promise<{
+        items: FundraisingDonationItem[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
 
 export const verifyFundraisingDonation = (
     donationId: string,
@@ -56,11 +82,53 @@ export const verifyFundraisingDonation = (
 ) =>
     api.patch(
         `/fundraising/donations/${donationId}/verify`,
-        payload ?? {},
+        payload
+            ? {
+                  ...payload,
+                  transaction_id: payload.transaction_id
+                      ? String(payload.transaction_id)
+                      : undefined,
+              }
+            : {},
     ) as Promise<{
         id: string;
         status: DonationStatus;
     }>;
+
+export const getFundraisingTransactions = (params?: {
+    match_status?: 'MATCHED' | 'UNMATCHED';
+    module_id?: string;
+    campaign_id?: string;
+    q?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+}) =>
+    api.get('/fundraising/transactions', {
+        params,
+    }) as Promise<{
+        items: FundraisingTransactionItem[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+
+export const attachFundraisingTransaction = (
+    transactionId: string,
+    donationId: string,
+) =>
+    api.patch(`/fundraising/transactions/${transactionId}/attach-donation`, {
+        donation_id: donationId,
+    }) as Promise<FundraisingTransactionItem>;
+
+export const unmatchFundraisingTransaction = (transactionId: string) =>
+    api.patch(
+        `/fundraising/transactions/${transactionId}/unmatch`,
+    ) as Promise<FundraisingTransactionItem>;
 
 export const rejectFundraisingDonation = (donationId: string, reason: string) =>
     api.patch(`/fundraising/donations/${donationId}/reject`, {

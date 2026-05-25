@@ -5,6 +5,7 @@ import {
     RefreshCw,
     Send,
     ShieldCheck,
+    Trash2,
 } from 'lucide-react';
 
 import { ContentLayout } from '@/components/layouts';
@@ -20,6 +21,7 @@ import {
 import {
     createCampaignModule,
     createManagedCampaign,
+    deleteManagedCampaign,
     getManagedCampaignDetail,
     getManagedCampaigns,
     publishCampaign,
@@ -28,17 +30,22 @@ import {
     type ManagedCampaignItem,
 } from '@/features/campaign/api/campaign';
 import {
+    attachFundraisingTransaction,
     getFundraisingDonations,
     getFundraisingModule,
+    getFundraisingTransactions,
     rejectFundraisingDonation,
+    unmatchFundraisingTransaction,
     updateFundraisingConfig,
     verifyFundraisingDonation,
     type FundraisingDonationItem,
+    type FundraisingTransactionItem,
 } from '@/features/campaign/api/fundraising';
 import {
     approveEventRegistration,
     checkInEventRegistration,
     completeEventRegistration,
+    getEventModule,
     getEventRegistrations,
     rejectEventRegistration,
     updateEventConfig,
@@ -47,10 +54,12 @@ import {
 import {
     confirmItemPledge,
     createItemTarget,
+    deleteItemTarget,
     getItemPledges,
     getItemTargets,
     handoverItemPledge,
     rejectItemPledge,
+    updateItemTarget,
     updateItemDonationConfig,
     type ItemPledgeItem,
     type ItemTargetItem,
@@ -274,6 +283,8 @@ export const CampaignsRoute = () => {
     const [fundraisingDonations, setFundraisingDonations] = React.useState<
         FundraisingDonationItem[]
     >([]);
+    const [fundraisingTransactions, setFundraisingTransactions] =
+        React.useState<FundraisingTransactionItem[]>([]);
     const [fundraisingConfig, setFundraisingConfig] = React.useState({
         target_amount: 0,
         receiver_name: '',
@@ -341,6 +352,10 @@ export const CampaignsRoute = () => {
     const isStudent = role === ROLES.SINHVIEN;
     const canManageCampaign = role === ROLES.CLB;
     const canMutateCampaign = role === ROLES.CLB;
+    const canDeleteDraft =
+        canMutateCampaign &&
+        !!detail &&
+        ['DRAFT', 'REVISION_REQUIRED'].includes(detail.status);
 
     const loadCampaigns = React.useCallback(async () => {
         if (!canManageCampaign) return;
@@ -348,7 +363,14 @@ export const CampaignsRoute = () => {
         try {
             const data = await getManagedCampaigns({ page: 1, limit: 50 });
             setCampaigns(data);
-            if (!selectedCampaignId && data.length > 0) {
+            if (data.length === 0) {
+                setSelectedCampaignId(null);
+                return;
+            }
+            if (
+                !selectedCampaignId ||
+                !data.some((campaign) => campaign.id === selectedCampaignId)
+            ) {
                 setSelectedCampaignId(data[0].id);
             }
         } catch (error) {
@@ -395,10 +417,16 @@ export const CampaignsRoute = () => {
 
     const loadFundraisingData = React.useCallback(async (moduleId: string) => {
         if (!moduleId) return;
-        const [moduleDetail, donations] = await Promise.all([
-            getFundraisingModule(moduleId),
-            getFundraisingDonations(moduleId, { page: 1, limit: 100 }),
-        ]);
+        const [moduleDetail, donationsPage, transactionsPage] =
+            await Promise.all([
+                getFundraisingModule(moduleId),
+                getFundraisingDonations(moduleId, { page: 1, limit: 100 }),
+                getFundraisingTransactions({
+                    module_id: moduleId,
+                    page: 1,
+                    limit: 100,
+                }),
+            ]);
 
         const config = moduleDetail.config ?? {};
         setFundraisingConfig({
@@ -410,7 +438,8 @@ export const CampaignsRoute = () => {
             sepay_enabled: Boolean(config.sepay_enabled),
             sepay_account_id: String(config.sepay_account_id ?? ''),
         });
-        setFundraisingDonations(donations);
+        setFundraisingDonations(donationsPage.items);
+        setFundraisingTransactions(transactionsPage.items);
     }, []);
 
     const loadItemData = React.useCallback(
@@ -444,52 +473,41 @@ export const CampaignsRoute = () => {
         [detail?.modules],
     );
 
-    const loadEventData = React.useCallback(
-        async (moduleId: string) => {
-            if (!moduleId) return;
-            const [registrations, moduleDetail] = await Promise.all([
-                getEventRegistrations(moduleId, { page: 1, limit: 100 }),
-                detail?.modules.find((module) => module.id === moduleId)
-                    ? Promise.resolve(
-                          detail.modules.find(
-                              (module) => module.id === moduleId,
-                          ),
-                      )
-                    : Promise.resolve(undefined),
-            ]);
-
-            const config = (moduleDetail?.settings ?? {}) as Record<
-                string,
-                unknown
-            >;
-            setEventConfig({
-                location: String(config.location ?? ''),
-                quota: Number(config.quota ?? 0),
-                registration_required: config.registration_required !== false,
-                checkin_required: config.checkin_required !== false,
-                benefits_text: Array.isArray(config.benefits)
-                    ? config.benefits
-                          .map((benefit) => String(benefit))
-                          .join('\n')
-                    : '',
-            });
-            setEventRegistrations(registrations);
-        },
-        [detail?.modules],
-    );
+    const loadEventData = React.useCallback(async (moduleId: string) => {
+        if (!moduleId) return;
+        const [registrations, moduleDetail] = await Promise.all([
+            getEventRegistrations(moduleId, { page: 1, limit: 100 }),
+            getEventModule(moduleId),
+        ]);
+        setEventConfig({
+            location: moduleDetail.config.location,
+            quota: moduleDetail.config.quota,
+            registration_required: moduleDetail.config.registration_required,
+            checkin_required: moduleDetail.config.checkin_required,
+            benefits_text: moduleDetail.config.benefits_text,
+        });
+        setEventRegistrations(registrations);
+    }, []);
 
     React.useEffect(() => {
         void loadCampaigns();
     }, [loadCampaigns]);
 
     React.useEffect(() => {
-        if (!selectedCampaignId) return;
+        if (!selectedCampaignId) {
+            setDetail(null);
+            setFundraisingModuleId('');
+            setItemModuleId('');
+            setEventModuleId('');
+            return;
+        }
         void loadCampaignDetail(selectedCampaignId);
     }, [loadCampaignDetail, selectedCampaignId]);
 
     React.useEffect(() => {
         if (!fundraisingModuleId) {
             setFundraisingDonations([]);
+            setFundraisingTransactions([]);
             return;
         }
         loadFundraisingData(fundraisingModuleId).catch((error) => {
@@ -658,6 +676,31 @@ export const CampaignsRoute = () => {
         }
     };
 
+    const onDeleteDraftCampaign = async () => {
+        if (!canDeleteDraft || !detail) return;
+        const confirmed = window.confirm(
+            'Xóa mềm chiến dịch nháp này? Thao tác này sẽ ẩn campaign khỏi danh sách quản trị.',
+        );
+        if (!confirmed) return;
+
+        try {
+            await deleteManagedCampaign(detail.id);
+            addNotification({
+                type: 'success',
+                title: 'Đã xóa chiến dịch nháp',
+                message: 'Chiến dịch đã được gỡ khỏi danh sách quản trị.',
+            });
+            await loadCampaigns();
+        } catch (error) {
+            addNotification({
+                type: 'error',
+                title: 'Xóa chiến dịch thất bại',
+                message:
+                    error instanceof Error ? error.message : 'Lỗi hệ thống',
+            });
+        }
+    };
+
     const onSaveFundraisingConfig = async (
         event: React.FormEvent<HTMLFormElement>,
     ) => {
@@ -688,8 +731,19 @@ export const CampaignsRoute = () => {
     };
 
     const onVerifyDonation = async (donationId: string) => {
+        const donation = fundraisingDonations.find(
+            (item) => item.id === donationId,
+        );
         try {
-            await verifyFundraisingDonation(donationId);
+            await verifyFundraisingDonation(
+                donationId,
+                donation?.matched_transaction_id
+                    ? {
+                          transaction_id: donation.matched_transaction_id,
+                          note: 'verify_from_campaign_management',
+                      }
+                    : undefined,
+            );
             addNotification({
                 type: 'success',
                 title: 'Xác minh thành công',
@@ -725,6 +779,51 @@ export const CampaignsRoute = () => {
             addNotification({
                 type: 'error',
                 title: 'Từ chối thất bại',
+                message:
+                    error instanceof Error ? error.message : 'Lỗi hệ thống',
+            });
+        }
+    };
+
+    const onAttachTransaction = async (
+        transactionId: string,
+        donationId: string,
+    ) => {
+        try {
+            await attachFundraisingTransaction(transactionId, donationId);
+            addNotification({
+                type: 'success',
+                title: 'Đã gắn transaction',
+                message: `Transaction #${transactionId} đã được đối soát thủ công.`,
+            });
+            if (fundraisingModuleId) {
+                await loadFundraisingData(fundraisingModuleId);
+            }
+        } catch (error) {
+            addNotification({
+                type: 'error',
+                title: 'Gắn transaction thất bại',
+                message:
+                    error instanceof Error ? error.message : 'Lỗi hệ thống',
+            });
+        }
+    };
+
+    const onUnmatchTransaction = async (transactionId: string) => {
+        try {
+            await unmatchFundraisingTransaction(transactionId);
+            addNotification({
+                type: 'success',
+                title: 'Đã gỡ đối soát',
+                message: `Transaction #${transactionId} đã trở về trạng thái unmatched.`,
+            });
+            if (fundraisingModuleId) {
+                await loadFundraisingData(fundraisingModuleId);
+            }
+        } catch (error) {
+            addNotification({
+                type: 'error',
+                title: 'Gỡ đối soát thất bại',
                 message:
                     error instanceof Error ? error.message : 'Lỗi hệ thống',
             });
@@ -790,6 +889,65 @@ export const CampaignsRoute = () => {
                 message:
                     error instanceof Error ? error.message : 'Lỗi hệ thống',
             });
+        }
+    };
+
+    const onUpdateItemTarget = async (
+        targetId: string,
+        payload: {
+            name: string;
+            unit: string;
+            target_quantity: number;
+            description: string;
+            status: 'ACTIVE' | 'CLOSED';
+        },
+    ) => {
+        try {
+            await updateItemTarget(targetId, {
+                name: payload.name,
+                unit: payload.unit,
+                target_quantity: payload.target_quantity,
+                description: payload.description || undefined,
+                status: payload.status,
+            });
+            addNotification({
+                type: 'success',
+                title: 'Đã cập nhật nhu cầu hiện vật',
+                message: `Target #${targetId} đã được cập nhật`,
+            });
+            if (itemModuleId) {
+                await loadItemData(itemModuleId);
+            }
+        } catch (error) {
+            addNotification({
+                type: 'error',
+                title: 'Cập nhật target thất bại',
+                message:
+                    error instanceof Error ? error.message : 'Lỗi hệ thống',
+            });
+            throw error;
+        }
+    };
+
+    const onDeleteItemTarget = async (targetId: string) => {
+        try {
+            await deleteItemTarget(targetId);
+            addNotification({
+                type: 'success',
+                title: 'Đã xóa nhu cầu hiện vật',
+                message: `Target #${targetId} đã được xóa`,
+            });
+            if (itemModuleId) {
+                await loadItemData(itemModuleId);
+            }
+        } catch (error) {
+            addNotification({
+                type: 'error',
+                title: 'Xóa target thất bại',
+                message:
+                    error instanceof Error ? error.message : 'Lỗi hệ thống',
+            });
+            throw error;
         }
     };
 
@@ -1188,6 +1346,22 @@ export const CampaignsRoute = () => {
                                     <Button
                                         type="button"
                                         variant="outline"
+                                        onClick={() =>
+                                            window.open(
+                                                paths.app.campaigns.preview.getHref(
+                                                    detail.id,
+                                                ),
+                                                '_blank',
+                                                'noopener,noreferrer',
+                                            )
+                                        }
+                                    >
+                                        <Megaphone className="mr-1 size-4" />
+                                        Preview
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
                                         onClick={() => void onSubmitReview()}
                                     >
                                         <Send className="mr-1 size-4" />
@@ -1201,6 +1375,18 @@ export const CampaignsRoute = () => {
                                         <ShieldCheck className="mr-1 size-4" />
                                         Công khai
                                     </Button>
+                                    {canDeleteDraft ? (
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            onClick={() =>
+                                                void onDeleteDraftCampaign()
+                                            }
+                                        >
+                                            <Trash2 className="mr-1 size-4" />
+                                            Xóa nháp
+                                        </Button>
+                                    ) : null}
                                 </div>
 
                                 {canMutateCampaign ? (
@@ -1475,6 +1661,7 @@ export const CampaignsRoute = () => {
                                         )}
                                         config={fundraisingConfig}
                                         donations={fundraisingDonations}
+                                        transactions={fundraisingTransactions}
                                         canMutateCampaign={canMutateCampaign}
                                         onModuleChange={(id) =>
                                             setFundraisingModuleId(id)
@@ -1488,6 +1675,12 @@ export const CampaignsRoute = () => {
                                         onSaveConfig={onSaveFundraisingConfig}
                                         onVerifyDonation={onVerifyDonation}
                                         onRejectDonation={onRejectDonation}
+                                        onAttachTransaction={
+                                            onAttachTransaction
+                                        }
+                                        onUnmatchTransaction={
+                                            onUnmatchTransaction
+                                        }
                                     />
                                 ) : null}
 
@@ -1522,6 +1715,8 @@ export const CampaignsRoute = () => {
                                             }))
                                         }
                                         onCreateTarget={onCreateItemTarget}
+                                        onUpdateTarget={onUpdateItemTarget}
+                                        onDeleteTarget={onDeleteItemTarget}
                                         onConfirmPledge={onConfirmItemPledge}
                                         onRejectPledge={onRejectItemPledge}
                                         onHandoverPledge={onHandoverItemPledge}

@@ -14,16 +14,16 @@ import {
 import { ContentLayout } from '@/components/layouts';
 import { Button } from '@/components/ui/button';
 import { useNotifications } from '@/components/ui/notifications';
-import { getFundraisingModule } from '@/features/campaign/api/fundraising';
 import {
+    getEventModule,
     getEventRegistrations,
     approveEventRegistration,
     rejectEventRegistration,
     checkInEventRegistration,
     completeEventRegistration,
     type EventRegistrationItem,
+    type EventModuleDetail,
 } from '@/features/campaign/api/events';
-import type { FundraisingModuleDetail } from '@/features/campaign/api/fundraising';
 import type { EventRegistrationStatus } from '@/types/api';
 import {
     EmptyState,
@@ -84,7 +84,7 @@ export const EventManagementRoute = () => {
     const navigate = useNavigate();
     const { addNotification } = useNotifications();
 
-    const [module, setModule] = useState<FundraisingModuleDetail | null>(null);
+    const [module, setModule] = useState<EventModuleDetail | null>(null);
     const [registrations, setRegistrations] = useState<EventRegistrationItem[]>(
         [],
     );
@@ -104,7 +104,7 @@ export const EventManagementRoute = () => {
         setError(null);
         try {
             const [mod, regs] = await Promise.all([
-                getFundraisingModule(moduleId),
+                getEventModule(moduleId),
                 getEventRegistrations(
                     moduleId,
                     statusFilter ? { status: statusFilter } : undefined,
@@ -259,7 +259,11 @@ export const EventManagementRoute = () => {
                         <button
                             key={s}
                             type="button"
-                            onClick={() => setStatusFilter(s)}
+                            onClick={() =>
+                                setStatusFilter(
+                                    s as '' | EventRegistrationStatus,
+                                )
+                            }
                             className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                                 statusFilter === s
                                     ? 'bg-[#2E5077] text-white'

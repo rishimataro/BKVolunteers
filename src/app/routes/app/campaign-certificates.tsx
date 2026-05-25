@@ -92,11 +92,12 @@ export const CampaignCertificatesRoute = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [showGenerate, setShowGenerate] = useState(false);
-    const [templates, setTemplates] = useState<{ id: string; name: string }[]>(
-        [],
-    );
+    const [templates, setTemplates] = useState<
+        Array<{ id: string; name: string; status: string }>
+    >([]);
     const [selectedTemplate, setSelectedTemplate] = useState('');
     const [selectedModule, setSelectedModule] = useState('');
+    const [generateDryRun, setGenerateDryRun] = useState(false);
     const [generating, setGenerating] = useState(false);
 
     const [revokeId, setRevokeId] = useState<string | null>(null);
@@ -132,9 +133,22 @@ export const CampaignCertificatesRoute = () => {
         setShowGenerate(true);
         try {
             const data = await getTemplates();
-            setTemplates(data.map((t) => ({ id: t.id, name: t.name })));
-            if (data.length > 0 && !selectedTemplate) {
-                setSelectedTemplate(data[0].id);
+            const activeTemplates = data
+                .filter((template) => template.status === 'ACTIVE')
+                .map((template) => ({
+                    id: String(template.id),
+                    name: template.name,
+                    status: template.status,
+                }));
+            setTemplates(activeTemplates);
+            if (activeTemplates.length > 0) {
+                setSelectedTemplate((current) =>
+                    activeTemplates.some((template) => template.id === current)
+                        ? current
+                        : String(activeTemplates[0].id),
+                );
+            } else {
+                setSelectedTemplate('');
             }
         } catch {
             addNotification({
@@ -152,15 +166,20 @@ export const CampaignCertificatesRoute = () => {
             const result = await generateCertificates(campaignId, {
                 template_id: selectedTemplate,
                 module_id: selectedModule || undefined,
+                dry_run: generateDryRun,
             });
             addNotification({
                 type: 'success',
-                title: 'Đã tạo',
-                message: `Đã tạo ${result.created_count} chứng nhận.`,
+                title: generateDryRun ? 'Đã kiểm tra' : 'Đã tạo',
+                message: generateDryRun
+                    ? `Có ${result.candidate_count ?? result.items.length} ứng viên đủ điều kiện.`
+                    : `Đã tạo ${result.created_count} chứng nhận.`,
             });
-            setShowGenerate(false);
-            setSelectedModule('');
-            await loadCertificates();
+            if (!generateDryRun) {
+                setShowGenerate(false);
+                setSelectedModule('');
+                await loadCertificates();
+            }
         } catch {
             addNotification({
                 type: 'error',
@@ -332,7 +351,15 @@ export const CampaignCertificatesRoute = () => {
                                 <label className="mb-1.5 block text-sm font-semibold text-slate-600">
                                     Mẫu chứng nhận
                                 </label>
+                                {templates.length === 0 ? (
+                                    <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                        Không có template ACTIVE. Hãy kích hoạt
+                                        hoặc tạo mới template trước khi generate
+                                        chứng nhận.
+                                    </p>
+                                ) : null}
                                 <select
+                                    data-testid="certificate-generate-template-select"
                                     value={selectedTemplate}
                                     onChange={(e) =>
                                         setSelectedTemplate(e.target.value)
@@ -341,7 +368,7 @@ export const CampaignCertificatesRoute = () => {
                                 >
                                     {templates.length === 0 ? (
                                         <option value="">
-                                            Không có mẫu nào
+                                            Không có template ACTIVE
                                         </option>
                                     ) : null}
                                     {templates.map((t) => (
@@ -365,13 +392,27 @@ export const CampaignCertificatesRoute = () => {
                                     className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
                                 />
                             </div>
+                            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 sm:col-span-2">
+                                <input
+                                    type="checkbox"
+                                    checked={generateDryRun}
+                                    onChange={(e) =>
+                                        setGenerateDryRun(e.target.checked)
+                                    }
+                                />
+                                Chỉ xem trước danh sách đủ điều kiện
+                            </label>
                         </div>
                         <div className="mt-4 flex gap-2">
                             <Button
                                 onClick={handleGenerate}
                                 disabled={generating || !selectedTemplate}
                             >
-                                {generating ? 'Đang tạo...' : 'Tạo ngay'}
+                                {generating
+                                    ? 'Đang xử lý...'
+                                    : generateDryRun
+                                      ? 'Kiểm tra'
+                                      : 'Tạo ngay'}
                             </Button>
                             <Button
                                 type="button"
@@ -474,8 +515,8 @@ export const CampaignCertificatesRoute = () => {
                                                             <RefreshCw className="size-4" />
                                                         </button>
                                                     ) : null}
-                                                    {cert.status !==
-                                                    'REVOKED' ? (
+                                                    {cert.status === 'READY' ||
+                                                    cert.status === 'SIGNED' ? (
                                                         <button
                                                             type="button"
                                                             onClick={() =>

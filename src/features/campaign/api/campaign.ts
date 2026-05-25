@@ -19,6 +19,12 @@ export const getManagedCampaigns = async (params?: {
 export const getManagedCampaignDetail = (id: string) =>
     api.get(`/campaigns/${id}`) as Promise<ManagedCampaignDetail>;
 
+export const getManagedCampaignPreview = (id: string) =>
+    api.get(`/campaigns/${id}/preview`) as Promise<ManagedCampaignDetail>;
+
+export const deleteManagedCampaign = (id: string) =>
+    api.delete(`/campaigns/${id}`) as Promise<void>;
+
 export const createManagedCampaign = (payload: {
     title: string;
     summary: string;

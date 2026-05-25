@@ -78,6 +78,10 @@ export const paths = {
                 path: 'campaigns/:slug',
                 getHref: (slug: string) => `/app/campaigns/${slug}`,
             },
+            preview: {
+                path: 'campaigns/:id/preview',
+                getHref: (id: string) => `/app/campaigns/${id}/preview`,
+            },
         },
         users: {
             path: 'users',

@@ -6,9 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     getBackgroundJobs,
+    retryBackgroundJob,
+    runBackgroundJobs,
     type BackgroundJobItem,
     type BackgroundJobQuery,
 } from '@/features/admin/api/background-jobs';
+import { useNotifications } from '@/components/ui/notifications';
 import {
     EmptyState,
     ErrorState,
@@ -31,6 +34,7 @@ const defaultStatusLabel = (s: string) =>
     s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export const BackgroundJobsRoute = () => {
+    const { addNotification } = useNotifications();
     const [jobs, setJobs] = useState<BackgroundJobItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -40,6 +44,8 @@ export const BackgroundJobsRoute = () => {
 
     const [filterType, setFilterType] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    const [isRunningJobs, setIsRunningJobs] = useState(false);
+    const [retryingJobId, setRetryingJobId] = useState<number | null>(null);
 
     const limit = 20;
 
@@ -77,6 +83,51 @@ export const BackgroundJobsRoute = () => {
         void loadJobs(newPage);
     };
 
+    const handleRunDueJobs = async () => {
+        setIsRunningJobs(true);
+        try {
+            const result = await runBackgroundJobs({
+                type: filterType.trim() || undefined,
+                limit: 10,
+            });
+            addNotification({
+                type: result.failed_count > 0 ? 'warning' : 'success',
+                title: 'Đã xử lý queue',
+                message: `Processed ${result.processed_count}, failed ${result.failed_count}.`,
+            });
+            await loadJobs(page);
+        } catch {
+            addNotification({
+                type: 'error',
+                title: 'Lỗi',
+                message: 'Không thể chạy tác vụ nền đến hạn.',
+            });
+        } finally {
+            setIsRunningJobs(false);
+        }
+    };
+
+    const handleRetryJob = async (jobId: number) => {
+        setRetryingJobId(jobId);
+        try {
+            await retryBackgroundJob(jobId);
+            addNotification({
+                type: 'success',
+                title: 'Đã retry job',
+                message: `Job #${jobId} đã được xử lý lại.`,
+            });
+            await loadJobs(page);
+        } catch {
+            addNotification({
+                type: 'error',
+                title: 'Lỗi',
+                message: `Không thể retry job #${jobId}.`,
+            });
+        } finally {
+            setRetryingJobId(null);
+        }
+    };
+
     return (
         <ContentLayout title="Tác vụ nền">
             <div className="space-y-6">
@@ -103,6 +154,7 @@ export const BackgroundJobsRoute = () => {
                             Loại
                         </label>
                         <Input
+                            data-testid="background-jobs-filter-type"
                             value={filterType}
                             onChange={(e) => setFilterType(e.target.value)}
                             placeholder="VD: RENDER_CERTIFICATE"
@@ -114,14 +166,29 @@ export const BackgroundJobsRoute = () => {
                             Trạng thái
                         </label>
                         <Input
+                            data-testid="background-jobs-filter-status"
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
                             placeholder="VD: PENDING"
                             className="h-9 w-40"
                         />
                     </div>
-                    <Button type="submit" size="sm">
+                    <Button
+                        type="submit"
+                        size="sm"
+                        data-testid="background-jobs-filter-submit"
+                    >
                         Tìm kiếm
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        data-testid="background-jobs-run-due"
+                        disabled={isRunningJobs}
+                        onClick={() => void handleRunDueJobs()}
+                    >
+                        {isRunningJobs ? 'Đang chạy...' : 'Chạy job đến hạn'}
                     </Button>
                 </form>
 
@@ -143,6 +210,7 @@ export const BackgroundJobsRoute = () => {
                                     <th className="px-4 py-3">Lỗi</th>
                                     <th className="px-4 py-3">Chạy lúc</th>
                                     <th className="px-4 py-3">Tạo lúc</th>
+                                    <th className="px-4 py-3" />
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -187,6 +255,28 @@ export const BackgroundJobsRoute = () => {
                                                 hour: '2-digit',
                                                 minute: '2-digit',
                                             }).format(new Date(job.created_at))}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            {job.status === 'FAILED' ? (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="outline"
+                                                    data-testid={`background-job-retry-${job.id}`}
+                                                    disabled={
+                                                        retryingJobId === job.id
+                                                    }
+                                                    onClick={() =>
+                                                        void handleRetryJob(
+                                                            job.id,
+                                                        )
+                                                    }
+                                                >
+                                                    {retryingJobId === job.id
+                                                        ? 'Đang retry...'
+                                                        : 'Retry'}
+                                                </Button>
+                                            ) : null}
                                         </td>
                                     </tr>
                                 ))}

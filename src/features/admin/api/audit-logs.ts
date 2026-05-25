@@ -21,6 +21,8 @@ export type AuditLogQuery = {
     entity_id?: string;
     actor_type?: string;
     actor_id?: string;
+    from?: string;
+    to?: string;
 };
 
 export type PaginatedResponse<T> = {
@@ -42,6 +44,8 @@ export const getAuditLogs = (query?: AuditLogQuery) => {
     if (query?.entity_id) params.set('entity_id', query.entity_id);
     if (query?.actor_type) params.set('actor_type', query.actor_type);
     if (query?.actor_id) params.set('actor_id', query.actor_id);
+    if (query?.from) params.set('from', query.from);
+    if (query?.to) params.set('to', query.to);
     const qs = params.toString();
     return api.get(`/admin/audit-logs${qs ? `?${qs}` : ''}`) as Promise<
         PaginatedResponse<AuditLogItem>

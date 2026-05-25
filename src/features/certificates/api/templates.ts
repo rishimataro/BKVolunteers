@@ -1,22 +1,33 @@
 import { api } from '@/lib/api-clients';
 
+export type CertificateTemplateStatus = 'ACTIVE' | 'INACTIVE';
+
 export type CertificateTemplate = {
     id: string;
     name: string;
     type: string;
-    status: string;
+    file_url: string | null;
+    layout_json: Record<string, unknown> | null;
+    status: CertificateTemplateStatus;
+    is_locked: boolean;
+    created_by: string | null;
     created_at: string;
+    updated_at: string;
 };
 
 export type CreateTemplateInput = {
     name: string;
     type: string;
+    file_url?: string | null;
+    layout_json?: Record<string, unknown> | null;
 };
 
 export type UpdateTemplateInput = {
     name?: string;
     type?: string;
-    status?: string;
+    file_url?: string | null;
+    layout_json?: Record<string, unknown> | null;
+    status?: CertificateTemplateStatus;
 };
 
 export const getTemplates = () => {
@@ -37,6 +48,6 @@ export const updateTemplate = (id: string, data: UpdateTemplateInput) => {
     ) as Promise<CertificateTemplate>;
 };
 
-export const deleteTemplate = (id: string) => {
+export const deactivateTemplate = (id: string) => {
     return api.delete(`/certificates/templates/${id}`) as Promise<void>;
 };

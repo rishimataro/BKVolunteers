@@ -9,13 +9,20 @@ export type AdminOrganization = {
     faculty: { id: string; name: string } | null;
     slug: string;
     description: string | null;
-    createdAt: string;
+    created_at: string;
+};
+
+export type AdminOrganizationsQuery = {
+    q?: string;
+    type?: string;
+    status?: string;
 };
 
 export type CreateOrganizationInput = {
     code: string;
     name: string;
     type: string;
+    status?: string;
     faculty_id?: string;
     description?: string;
 };
@@ -29,8 +36,20 @@ export type UpdateOrganizationInput = {
     description?: string;
 };
 
-export const getAdminOrganizations = () => {
-    return api.get('/admin/organizations') as Promise<AdminOrganization[]>;
+export const getAdminOrganizations = async (
+    query?: AdminOrganizationsQuery,
+) => {
+    const params = new URLSearchParams();
+    if (query?.q) params.set('q', query.q);
+    if (query?.type) params.set('type', query.type);
+    if (query?.status) params.set('status', query.status);
+    const qs = params.toString();
+    const result = (await api.get(
+        `/admin/organizations${qs ? `?${qs}` : ''}`,
+    )) as {
+        items: AdminOrganization[];
+    };
+    return result.items;
 };
 
 export const createAdminOrganization = (data: CreateOrganizationInput) => {

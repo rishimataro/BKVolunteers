@@ -36,6 +36,24 @@ export const createItemTarget = (
         id: string;
     }>;
 
+export const updateItemTarget = (
+    targetId: string,
+    payload: {
+        name: string;
+        unit: string;
+        target_quantity: number;
+        description?: string;
+        status: 'ACTIVE' | 'CLOSED';
+    },
+) =>
+    api.patch(
+        `/item-donations/targets/${targetId}`,
+        payload,
+    ) as Promise<ItemTargetItem>;
+
+export const deleteItemTarget = (targetId: string) =>
+    api.delete(`/item-donations/targets/${targetId}`) as Promise<void>;
+
 export const getItemTargets = (
     moduleId: string,
     status?: 'ACTIVE' | 'CLOSED',

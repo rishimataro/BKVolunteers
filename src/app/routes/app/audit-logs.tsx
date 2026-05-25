@@ -22,6 +22,9 @@ const actionLabel: Record<string, string> = {
     CAMPAIGN_REJECTED: 'Từ chối',
     CAMPAIGN_REVISION_REQUESTED: 'Yêu cầu chỉnh sửa',
     CAMPAIGN_PUBLISHED: 'Xuất bản',
+    CERTIFICATE_TEMPLATE_CREATED: 'Tạo template chứng nhận',
+    CERTIFICATE_TEMPLATE_UPDATED: 'Cập nhật template chứng nhận',
+    CERTIFICATE_TEMPLATE_DEACTIVATED: 'Ngưng hoạt động template chứng nhận',
     CERTIFICATE_REVOKED: 'Thu hồi chứng nhận',
     CERTIFICATE_REISSUED: 'Cấp lại chứng nhận',
 };
@@ -39,6 +42,8 @@ export const AuditLogsRoute = () => {
 
     const [filterAction, setFilterAction] = useState('');
     const [filterEntity, setFilterEntity] = useState('');
+    const [filterFrom, setFilterFrom] = useState('');
+    const [filterTo, setFilterTo] = useState('');
 
     const limit = 20;
 
@@ -49,6 +54,8 @@ export const AuditLogsRoute = () => {
             const query: AuditLogQuery = { page: p, limit };
             if (filterAction.trim()) query.action = filterAction.trim();
             if (filterEntity.trim()) query.entity_type = filterEntity.trim();
+            if (filterFrom) query.from = new Date(filterFrom).toISOString();
+            if (filterTo) query.to = new Date(filterTo).toISOString();
             const result = await getAuditLogs(query);
             setLogs(result.items);
             setPage(result.pagination.page);
@@ -102,6 +109,7 @@ export const AuditLogsRoute = () => {
                             Hành động
                         </label>
                         <Input
+                            data-testid="audit-filter-action"
                             value={filterAction}
                             onChange={(e) => setFilterAction(e.target.value)}
                             placeholder="VD: CAMPAIGN_APPROVED"
@@ -113,13 +121,42 @@ export const AuditLogsRoute = () => {
                             Loại đối tượng
                         </label>
                         <Input
+                            data-testid="audit-filter-entity"
                             value={filterEntity}
                             onChange={(e) => setFilterEntity(e.target.value)}
                             placeholder="VD: campaign"
                             className="h-9 w-40"
                         />
                     </div>
-                    <Button type="submit" size="sm">
+                    <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase">
+                            Từ ngày
+                        </label>
+                        <Input
+                            data-testid="audit-filter-from"
+                            type="datetime-local"
+                            value={filterFrom}
+                            onChange={(e) => setFilterFrom(e.target.value)}
+                            className="h-9 w-52"
+                        />
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase">
+                            Đến ngày
+                        </label>
+                        <Input
+                            data-testid="audit-filter-to"
+                            type="datetime-local"
+                            value={filterTo}
+                            onChange={(e) => setFilterTo(e.target.value)}
+                            className="h-9 w-52"
+                        />
+                    </div>
+                    <Button
+                        type="submit"
+                        size="sm"
+                        data-testid="audit-filter-submit"
+                    >
                         Tìm kiếm
                     </Button>
                 </form>

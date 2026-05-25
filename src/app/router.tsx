@@ -153,6 +153,15 @@ export const AppRouter = () => {
                         ),
                 },
                 {
+                    path: paths.app.campaigns.preview.path,
+                    lazy: () =>
+                        import('@/app/routes/app/campaign-preview.tsx').then(
+                            (m) => ({
+                                Component: m.CampaignPreviewRoute,
+                            }),
+                        ),
+                },
+                {
                     path: paths.app.settings.path,
                     lazy: () =>
                         import('@/app/routes/app/settings.tsx').then((m) => ({

@@ -8,6 +8,7 @@ import type {
 
 export type PublicCampaignFilters = {
     q?: string;
+    organization_id?: string;
     module_type?: ModuleType | '';
     status?: 'PUBLISHED' | 'ONGOING' | '';
     page?: number;
@@ -32,10 +33,9 @@ export type PublicCampaignListResult = {
 export const getPublicCampaigns = async (
     filters: PublicCampaignFilters = {},
 ): Promise<PublicCampaignListResult> => {
-    const data = await api.get<PaginatedResponse<PublicCampaignCard>>(
-        '/public/campaigns',
-        { params: filters },
-    );
+    const data = (await api.get('/public/campaigns', {
+        params: filters,
+    })) as PaginatedResponse<PublicCampaignCard>;
     return {
         items: data.items,
         meta: {
@@ -50,8 +50,8 @@ export const getPublicCampaigns = async (
 export const getPublicCampaignDetail = async (
     slug: string,
 ): Promise<PublicCampaignDetail> => {
-    const data = await api.get<PublicCampaignDetail>(
+    const data = (await api.get(
         `/public/campaigns/${slug}`,
-    );
+    )) as PublicCampaignDetail;
     return data;
 };

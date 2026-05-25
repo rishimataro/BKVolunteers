@@ -1,9 +1,56 @@
 import { api } from '@/lib/api-clients';
 import type { EventRegistrationStatus } from '@/types/api';
-import type { EventRegistrationItem } from '../types';
-export type { EventRegistrationItem };
+import type { EventModuleDetail, EventRegistrationItem } from '../types';
+export type { EventModuleDetail, EventRegistrationItem };
 
-export const updateEventConfig = (
+type EventModuleResponse = Omit<EventModuleDetail, 'config'>;
+
+const normalizeBenefits = (benefits: unknown): string[] => {
+    if (!Array.isArray(benefits)) {
+        return [];
+    }
+
+    const deduped = new Set<string>();
+
+    benefits.forEach((item) => {
+        const normalized = String(item).trim();
+        if (normalized) {
+            deduped.add(normalized);
+        }
+    });
+
+    return Array.from(deduped);
+};
+
+const normalizeEventConfig = (config: Record<string, unknown>) => {
+    const benefits = normalizeBenefits(config.benefits);
+
+    return {
+        location: String(config.location ?? ''),
+        quota: Number(config.quota ?? 0),
+        registration_required: config.registration_required !== false,
+        checkin_required: config.checkin_required !== false,
+        benefits,
+        benefits_text: benefits.join('\n'),
+    };
+};
+
+export const getEventModule = async (
+    moduleId: string,
+): Promise<EventModuleDetail> => {
+    const data = (await api.get(
+        `/events/modules/${moduleId}`,
+    )) as EventModuleResponse;
+
+    return {
+        ...data,
+        config: normalizeEventConfig(
+            (data.settings_json ?? {}) as Record<string, unknown>,
+        ),
+    };
+};
+
+export const updateEventConfig = async (
     moduleId: string,
     payload: {
         location: string;
@@ -12,11 +59,23 @@ export const updateEventConfig = (
         checkin_required: boolean;
         benefits: string[];
     },
-) =>
-    api.patch(`/events/modules/${moduleId}/config`, payload) as Promise<{
+): Promise<{
+    module_id: string;
+    config: EventModuleDetail['config'];
+}> => {
+    const data = (await api.patch(
+        `/events/modules/${moduleId}/config`,
+        payload,
+    )) as {
         module_id: string;
         config: Record<string, unknown>;
-    }>;
+    };
+
+    return {
+        module_id: data.module_id,
+        config: normalizeEventConfig(data.config),
+    };
+};
 
 export const createEventRegistration = (
     moduleId: string,
@@ -55,10 +114,10 @@ export const approveEventRegistration = (
 
 export const rejectEventRegistration = (
     registrationId: string,
-    reviewNote: string,
+    reason: string,
 ) =>
     api.patch(`/events/registrations/${registrationId}/reject`, {
-        review_note: reviewNote,
+        reason,
     }) as Promise<{
         id: string;
         status: EventRegistrationStatus;

@@ -48,6 +48,11 @@ const statusConfig: Record<
         color: 'text-emerald-600 bg-emerald-50 border-emerald-200',
         icon: CheckCircle2,
     },
+    RECEIVED: {
+        label: 'Đã tiếp nhận',
+        color: 'text-green-600 bg-green-50 border-green-200',
+        icon: CheckCircle2,
+    },
     HANDOVER: {
         label: 'Đã bàn giao',
         color: 'text-green-600 bg-green-50 border-green-200',

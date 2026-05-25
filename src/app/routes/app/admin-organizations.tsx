@@ -32,10 +32,14 @@ export const AdminOrganizationsRoute = () => {
     const [error, setError] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [filterQ, setFilterQ] = useState('');
+    const [filterType, setFilterType] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
     const [form, setForm] = useState({
         code: '',
         name: '',
         type: 'CLUB',
+        status: 'ACTIVE',
         description: '',
     });
     const [saving, setSaving] = useState(false);
@@ -45,7 +49,11 @@ export const AdminOrganizationsRoute = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const data = await getAdminOrganizations();
+            const data = await getAdminOrganizations({
+                q: filterQ.trim() || undefined,
+                type: filterType || undefined,
+                status: filterStatus || undefined,
+            });
             setOrgs(data);
         } catch {
             setError('Không thể tải danh sách tổ chức.');
@@ -56,10 +64,17 @@ export const AdminOrganizationsRoute = () => {
 
     useEffect(() => {
         void loadOrgs();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const resetForm = () => {
-        setForm({ code: '', name: '', type: 'CLUB', description: '' });
+        setForm({
+            code: '',
+            name: '',
+            type: 'CLUB',
+            status: 'ACTIVE',
+            description: '',
+        });
         setEditingId(null);
         setShowForm(false);
     };
@@ -69,6 +84,7 @@ export const AdminOrganizationsRoute = () => {
             code: org.code,
             name: org.name,
             type: org.type,
+            status: org.status,
             description: org.description ?? '',
         });
         setEditingId(org.id);
@@ -86,6 +102,7 @@ export const AdminOrganizationsRoute = () => {
                     name: form.name.trim(),
                     code: form.code.trim(),
                     type: form.type,
+                    status: form.status,
                     description: form.description.trim() || undefined,
                 });
                 addNotification({
@@ -98,6 +115,7 @@ export const AdminOrganizationsRoute = () => {
                     name: form.name.trim(),
                     code: form.code.trim(),
                     type: form.type,
+                    status: form.status,
                     description: form.description.trim() || undefined,
                 });
                 addNotification({
@@ -159,6 +177,67 @@ export const AdminOrganizationsRoute = () => {
                     ) : null}
                 </div>
 
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        void loadOrgs();
+                    }}
+                    className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4"
+                >
+                    <div>
+                        <Label className="mb-1.5 block text-sm font-semibold text-slate-600">
+                            Tìm kiếm
+                        </Label>
+                        <Input
+                            data-testid="admin-org-filter-q"
+                            value={filterQ}
+                            onChange={(e) => setFilterQ(e.target.value)}
+                            placeholder="Mã hoặc tên tổ chức"
+                            className="w-64"
+                        />
+                    </div>
+                    <div>
+                        <Label className="mb-1.5 block text-sm font-semibold text-slate-600">
+                            Loại
+                        </Label>
+                        <select
+                            data-testid="admin-org-filter-type"
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value)}
+                            className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                        >
+                            <option value="">Tất cả</option>
+                            {orgTypeOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <Label className="mb-1.5 block text-sm font-semibold text-slate-600">
+                            Trạng thái
+                        </Label>
+                        <select
+                            data-testid="admin-org-filter-status"
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                        >
+                            <option value="">Tất cả</option>
+                            <option value="ACTIVE">Đang hoạt động</option>
+                            <option value="INACTIVE">Ngưng hoạt động</option>
+                        </select>
+                    </div>
+                    <Button
+                        type="submit"
+                        variant="outline"
+                        data-testid="admin-org-filter-submit"
+                    >
+                        Lọc
+                    </Button>
+                </form>
+
                 {showForm ? (
                     <form
                         onSubmit={handleSave}
@@ -179,6 +258,7 @@ export const AdminOrganizationsRoute = () => {
                                 </Label>
                                 <Input
                                     id="org-code"
+                                    data-testid="admin-org-form-code"
                                     value={form.code}
                                     onChange={(e) =>
                                         setForm((f) => ({
@@ -198,6 +278,7 @@ export const AdminOrganizationsRoute = () => {
                                 </Label>
                                 <select
                                     id="org-type"
+                                    data-testid="admin-org-form-type"
                                     value={form.type}
                                     onChange={(e) =>
                                         setForm((f) => ({
@@ -217,6 +298,31 @@ export const AdminOrganizationsRoute = () => {
                                     ))}
                                 </select>
                             </div>
+                            <div>
+                                <Label
+                                    htmlFor="org-status"
+                                    className="mb-1.5 block text-sm font-semibold text-slate-600"
+                                >
+                                    Trạng thái
+                                </Label>
+                                <select
+                                    id="org-status"
+                                    data-testid="admin-org-form-status"
+                                    value={form.status}
+                                    onChange={(e) =>
+                                        setForm((f) => ({
+                                            ...f,
+                                            status: e.target.value,
+                                        }))
+                                    }
+                                    className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900"
+                                >
+                                    <option value="ACTIVE">Hoạt động</option>
+                                    <option value="INACTIVE">
+                                        Ngưng hoạt động
+                                    </option>
+                                </select>
+                            </div>
                             <div className="sm:col-span-2">
                                 <Label
                                     htmlFor="org-name"
@@ -226,6 +332,7 @@ export const AdminOrganizationsRoute = () => {
                                 </Label>
                                 <Input
                                     id="org-name"
+                                    data-testid="admin-org-form-name"
                                     value={form.name}
                                     onChange={(e) =>
                                         setForm((f) => ({
@@ -245,6 +352,7 @@ export const AdminOrganizationsRoute = () => {
                                 </Label>
                                 <Input
                                     id="org-desc"
+                                    data-testid="admin-org-form-description"
                                     value={form.description}
                                     onChange={(e) =>
                                         setForm((f) => ({
@@ -259,6 +367,7 @@ export const AdminOrganizationsRoute = () => {
                         <div className="mt-4 flex gap-2">
                             <Button
                                 type="submit"
+                                data-testid="admin-org-form-submit"
                                 disabled={
                                     saving ||
                                     !form.name.trim() ||
@@ -331,13 +440,16 @@ export const AdminOrganizationsRoute = () => {
                                             >
                                                 {org.status === 'ACTIVE'
                                                     ? 'Hoạt động'
-                                                    : org.status}
+                                                    : org.status === 'INACTIVE'
+                                                      ? 'Ngưng hoạt động'
+                                                      : org.status}
                                             </span>
                                         </td>
                                         <td className="px-5 py-4">
                                             <div className="flex justify-end gap-1">
                                                 <button
                                                     type="button"
+                                                    title="Chỉnh sửa"
                                                     onClick={() =>
                                                         openEdit(org)
                                                     }
@@ -347,6 +459,7 @@ export const AdminOrganizationsRoute = () => {
                                                 </button>
                                                 <button
                                                     type="button"
+                                                    title="Xóa"
                                                     onClick={() =>
                                                         void handleDelete(
                                                             org.id,

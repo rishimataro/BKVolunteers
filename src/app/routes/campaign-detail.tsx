@@ -220,7 +220,7 @@ const CampaignDetailView = ({
     const onSubmitEventRegistration = async (moduleId: string) => {
         try {
             setSubmittingModuleId(moduleId);
-            await createEventRegistration(moduleId, {
+            const result = await createEventRegistration(moduleId, {
                 answers: {
                     note: eventForm[moduleId]?.note?.trim() || '',
                 },
@@ -228,7 +228,10 @@ const CampaignDetailView = ({
             addNotification({
                 type: 'success',
                 title: 'Đăng ký sự kiện thành công',
-                message: 'Yêu cầu tham gia của bạn đã được ghi nhận.',
+                message:
+                    result.status === 'APPROVED'
+                        ? 'Bạn đã được duyệt tham gia ngay.'
+                        : 'Yêu cầu tham gia của bạn đã được ghi nhận.',
             });
             setEventForm((current) => ({
                 ...current,

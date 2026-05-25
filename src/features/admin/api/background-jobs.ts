@@ -20,6 +20,22 @@ export type BackgroundJobQuery = {
     status?: string;
 };
 
+export type RunBackgroundJobsResult = {
+    queued: number;
+    processed_count: number;
+    failed_count: number;
+    items: Array<{
+        id: number;
+        type: string;
+        status: string;
+        certificate_id: number;
+    }>;
+    failed: Array<{
+        id: number;
+        error: string;
+    }>;
+};
+
 export type PaginatedResponse<T> = {
     items: T[];
     pagination: {
@@ -40,4 +56,20 @@ export const getBackgroundJobs = (query?: BackgroundJobQuery) => {
     return api.get(`/admin/background-jobs${qs ? `?${qs}` : ''}`) as Promise<
         PaginatedResponse<BackgroundJobItem>
     >;
+};
+
+export const runBackgroundJobs = (data?: { type?: string; limit?: number }) => {
+    return api.post(
+        '/admin/background-jobs/run',
+        data ?? {},
+    ) as Promise<RunBackgroundJobsResult>;
+};
+
+export const retryBackgroundJob = (id: number | string) => {
+    return api.post(`/admin/background-jobs/${id}/retry`) as Promise<{
+        id: number;
+        type: string;
+        status: string;
+        certificate_id: number;
+    }>;
 };

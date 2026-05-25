@@ -66,6 +66,10 @@ src/
     cp .env.example .env
     ```
 
+Mẫu production hiện có tại:
+
+- `BKVolunteersFrontend/.env.production.example`
+
 ### Development
 
 Start the development server:
