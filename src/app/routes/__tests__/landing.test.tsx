@@ -66,7 +66,7 @@ describe('LandingRoute', () => {
         expect(navigate).toHaveBeenCalledWith(paths.auth.login.getHref());
     });
 
-    it('navigates to register when clicking Đăng ký tình nguyện viên in hero', () => {
+    it('navigates to public campaigns when clicking Khám phá chiến dịch in hero', () => {
         const navigate = vi.fn();
         (useNavigate as Mock).mockReturnValue(navigate);
 
@@ -76,12 +76,12 @@ describe('LandingRoute', () => {
             </MemoryRouter>,
         );
 
-        const registerButton = screen.getByRole('button', {
-            name: /đăng ký tình nguyện viên/i,
+        const exploreButton = screen.getByRole('button', {
+            name: /khám phá chiến dịch/i,
         });
-        fireEvent.click(registerButton);
+        fireEvent.click(exploreButton);
 
-        expect(navigate).toHaveBeenCalledWith(paths.auth.register.getHref());
+        expect(navigate).toHaveBeenCalledWith(paths.campaigns.getHref());
     });
 
     it('navigates to login when clicking Tham gia ngay in CTA section', () => {

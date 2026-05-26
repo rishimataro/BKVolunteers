@@ -6,6 +6,7 @@ import {
 } from 'react-router';
 
 import { DashboardLayout } from '@/components/layouts';
+import { env } from '@/config/env';
 import { paths } from '@/config/paths';
 import { ProtectedRoute } from '@/features/auth';
 
@@ -59,6 +60,15 @@ export const AppRouter = () => {
             },
         },
         {
+            path: paths.auth.register.path,
+            element: (
+                <Navigate
+                    to={paths.campaigns.getHref()}
+                    replace
+                />
+            ),
+        },
+        {
             path: paths.auth.login.path,
             lazy: async () => {
                 const { LoginPage } = await import('./routes/auth/login');
@@ -97,14 +107,18 @@ export const AppRouter = () => {
                 return { Component: MicrosoftCallbackPage };
             },
         },
-        {
-            path: paths.auth.microsoftMockLogin.path,
-            lazy: async () => {
-                const { MicrosoftMockLoginPage } =
-                    await import('./routes/auth/microsoft-mock-login');
-                return { Component: MicrosoftMockLoginPage };
-            },
-        },
+        ...(env.ENABLE_API_MOCKING
+            ? [
+                  {
+                      path: paths.auth.microsoftMockLogin.path,
+                      lazy: async () => {
+                          const { MicrosoftMockLoginPage } =
+                              await import('./routes/auth/microsoft-mock-login');
+                          return { Component: MicrosoftMockLoginPage };
+                      },
+                  },
+              ]
+            : []),
         {
             path: paths.app.root.path,
             element: (
@@ -200,6 +214,13 @@ export const AppRouter = () => {
                     lazy: () =>
                         import('@/app/routes/app/donate.tsx').then((m) => ({
                             Component: m.DonateRoute,
+                        })),
+                },
+                {
+                    path: paths.app.donationPayment.path,
+                    lazy: () =>
+                        import('@/app/routes/app/donation-payment.tsx').then((m) => ({
+                            Component: m.DonationPaymentRoute,
                         })),
                 },
                 {

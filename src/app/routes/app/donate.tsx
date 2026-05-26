@@ -81,7 +81,7 @@ export const DonateRoute = () => {
         if (!moduleId || amount <= 0) return;
         setSubmitting(true);
         try {
-            await createMoneyDonation(moduleId, {
+            const res = await createMoneyDonation(moduleId, {
                 amount,
                 donor_name: donorName.trim() || undefined,
                 message: message.trim() || undefined,
@@ -91,7 +91,11 @@ export const DonateRoute = () => {
                 title: 'Đóng góp thành công',
                 message: 'Cảm ơn bạn đã đóng góp!',
             });
-            navigate(paths.app.myDonations.getHref());
+            if (res && (res as any).id) {
+                navigate(paths.app.donationPayment.getHref(String((res as any).id)))
+            } else {
+                navigate(paths.app.myDonations.getHref())
+            }
         } catch {
             addNotification({
                 type: 'error',

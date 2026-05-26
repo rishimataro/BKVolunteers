@@ -82,11 +82,11 @@ export const LandingRoute = () => {
                                         className="h-12 px-8 rounded-full border-blue-600 text-blue-600 hover:bg-blue-50 shadow-md transition-all hover:scale-105"
                                         onClick={() =>
                                             navigate(
-                                                paths.auth.register.getHref(),
+                                                paths.campaigns.getHref(),
                                             )
                                         }
                                     >
-                                        Đăng ký tình nguyện viên
+                                        Khám phá chiến dịch
                                     </Button>
                                 </div>
                             </div>

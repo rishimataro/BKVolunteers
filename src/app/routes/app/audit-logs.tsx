@@ -4,6 +4,7 @@ import { ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ContentLayout } from '@/components/layouts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ROLES, useUser } from '@/features/auth';
 import {
     getAuditLogs,
     type AuditLogItem,
@@ -33,6 +34,7 @@ const defaultLabel = (action: string) =>
     action.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export const AuditLogsRoute = () => {
+    const user = useUser();
     const [logs, setLogs] = useState<AuditLogItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,18 @@ export const AuditLogsRoute = () => {
     const [filterTo, setFilterTo] = useState('');
 
     const limit = 20;
+
+    if (!user.data) return null;
+
+    if (user.data.role !== ROLES.DOANTRUONG) {
+        return (
+            <ContentLayout title="Nhật ký hoạt động">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+                    Vai trò hiện tại không có quyền xem nhật ký hoạt động.
+                </div>
+            </ContentLayout>
+        );
+    }
 
     const loadLogs = async (p: number) => {
         setIsLoading(true);

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { ContentLayout } from '@/components/layouts';
+import { ActionDrawer } from '@/components/ui/action-drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNotifications } from '@/components/ui/notifications';
@@ -103,6 +104,33 @@ const publicStatusOptions = [
     { value: 'ONGOING', label: 'Đang diễn ra' },
     { value: 'PUBLISHED', label: 'Đã công khai' },
 ] as const;
+
+type CampaignActionDialogState =
+    | {
+          kind: 'reject-donation';
+          targetId: string;
+          value: string;
+      }
+    | {
+          kind: 'reject-item-pledge';
+          targetId: string;
+          value: string;
+      }
+    | {
+          kind: 'handover-item-pledge';
+          targetId: string;
+          value: string;
+      }
+    | {
+          kind: 'reject-registration';
+          targetId: string;
+          value: string;
+      }
+    | {
+          kind: 'complete-registration';
+          targetId: string;
+          value: string;
+      };
 
 const StudentCampaignDiscovery = () => {
     const [filters, setFilters] = React.useState<PublicCampaignFilters>({
@@ -322,6 +350,10 @@ export const CampaignsRoute = () => {
     const [eventRegistrations, setEventRegistrations] = React.useState<
         EventRegistrationItem[]
     >([]);
+    const [actionDialog, setActionDialog] =
+        React.useState<CampaignActionDialogState | null>(null);
+    const [submittingActionDialog, setSubmittingActionDialog] =
+        React.useState(false);
 
     const [createForm, setCreateForm] = React.useState({
         title: '',
@@ -356,6 +388,11 @@ export const CampaignsRoute = () => {
         canMutateCampaign &&
         !!detail &&
         ['DRAFT', 'REVISION_REQUIRED'].includes(detail.status);
+
+    const closeActionDialog = React.useCallback(() => {
+        setActionDialog(null);
+        setSubmittingActionDialog(false);
+    }, []);
 
     const loadCampaigns = React.useCallback(async () => {
         if (!canManageCampaign) return;
@@ -763,26 +800,11 @@ export const CampaignsRoute = () => {
     };
 
     const onRejectDonation = async (donationId: string) => {
-        const reason = window.prompt('Nhập lý do từ chối khoản đóng góp:');
-        if (!reason) return;
-        try {
-            await rejectFundraisingDonation(donationId, reason);
-            addNotification({
-                type: 'success',
-                title: 'Đã từ chối khoản đóng góp',
-                message: `Khoản đóng góp #${donationId} đã bị từ chối`,
-            });
-            if (fundraisingModuleId) {
-                await loadFundraisingData(fundraisingModuleId);
-            }
-        } catch (error) {
-            addNotification({
-                type: 'error',
-                title: 'Từ chối thất bại',
-                message:
-                    error instanceof Error ? error.message : 'Lỗi hệ thống',
-            });
-        }
+        setActionDialog({
+            kind: 'reject-donation',
+            targetId: donationId,
+            value: '',
+        });
     };
 
     const onAttachTransaction = async (
@@ -973,63 +995,19 @@ export const CampaignsRoute = () => {
     };
 
     const onRejectItemPledge = async (pledgeId: string) => {
-        const reason = window.prompt('Nhập lý do từ chối pledge hiện vật:');
-        if (!reason) return;
-        try {
-            await rejectItemPledge(pledgeId, reason);
-            addNotification({
-                type: 'success',
-                title: 'Đã từ chối pledge hiện vật',
-                message: `Pledge #${pledgeId} đã bị từ chối`,
-            });
-            if (itemModuleId) {
-                await loadItemData(itemModuleId);
-            }
-        } catch (error) {
-            addNotification({
-                type: 'error',
-                title: 'Từ chối pledge thất bại',
-                message:
-                    error instanceof Error ? error.message : 'Lỗi hệ thống',
-            });
-        }
+        setActionDialog({
+            kind: 'reject-item-pledge',
+            targetId: pledgeId,
+            value: '',
+        });
     };
 
     const onHandoverItemPledge = async (pledgeId: string, quantity: number) => {
-        const input = window.prompt(
-            'Nhập số lượng thực nhận',
-            String(quantity),
-        );
-        if (!input) return;
-        const parsed = Number(input);
-        if (!Number.isFinite(parsed) || parsed <= 0) {
-            addNotification({
-                type: 'error',
-                title: 'Số lượng không hợp lệ',
-                message: 'Số lượng thực nhận phải lớn hơn 0.',
-            });
-            return;
-        }
-        try {
-            await handoverItemPledge(pledgeId, {
-                received_quantity: parsed,
-            });
-            addNotification({
-                type: 'success',
-                title: 'Đã ghi nhận bàn giao',
-                message: `Pledge #${pledgeId} đã cập nhật trạng thái đã nhận`,
-            });
-            if (itemModuleId) {
-                await loadItemData(itemModuleId);
-            }
-        } catch (error) {
-            addNotification({
-                type: 'error',
-                title: 'Bàn giao thất bại',
-                message:
-                    error instanceof Error ? error.message : 'Lỗi hệ thống',
-            });
-        }
+        setActionDialog({
+            kind: 'handover-item-pledge',
+            targetId: pledgeId,
+            value: String(quantity),
+        });
     };
 
     const onSaveEventConfig = async (
@@ -1086,26 +1064,11 @@ export const CampaignsRoute = () => {
     };
 
     const onRejectRegistration = async (registrationId: string) => {
-        const reason = window.prompt('Nhập lý do từ chối đăng ký sự kiện:');
-        if (!reason) return;
-        try {
-            await rejectEventRegistration(registrationId, reason);
-            addNotification({
-                type: 'success',
-                title: 'Đã từ chối đăng ký sự kiện',
-                message: `Registration #${registrationId} đã bị từ chối`,
-            });
-            if (eventModuleId) {
-                await loadEventData(eventModuleId);
-            }
-        } catch (error) {
-            addNotification({
-                type: 'error',
-                title: 'Từ chối đăng ký thất bại',
-                message:
-                    error instanceof Error ? error.message : 'Lỗi hệ thống',
-            });
-        }
+        setActionDialog({
+            kind: 'reject-registration',
+            targetId: registrationId,
+            value: '',
+        });
     };
 
     const onCheckInRegistration = async (registrationId: string) => {
@@ -1130,30 +1093,191 @@ export const CampaignsRoute = () => {
     };
 
     const onCompleteRegistration = async (registrationId: string) => {
-        const hoursText = window.prompt('Nhập số giờ tham gia (tùy chọn):');
-        const hours =
-            hoursText && Number.isFinite(Number(hoursText))
-                ? Number(hoursText)
-                : undefined;
+        setActionDialog({
+            kind: 'complete-registration',
+            targetId: registrationId,
+            value: '',
+        });
+    };
+
+    const actionDialogConfig = React.useMemo(() => {
+        if (!actionDialog) return null;
+
+        switch (actionDialog.kind) {
+            case 'reject-donation':
+                return {
+                    title: 'Từ chối khoản đóng góp',
+                    description:
+                        'Nhập lý do để lưu vào lịch sử xử lý khoản đóng góp này.',
+                    label: 'Lý do từ chối',
+                    placeholder: 'VD: Nội dung chuyển khoản không hợp lệ',
+                    submitLabel: 'Xác nhận từ chối',
+                    fieldType: 'textarea' as const,
+                    required: true,
+                };
+            case 'reject-item-pledge':
+                return {
+                    title: 'Từ chối pledge hiện vật',
+                    description:
+                        'Giải thích ngắn gọn để sinh viên biết vì sao pledge bị từ chối.',
+                    label: 'Lý do từ chối',
+                    placeholder: 'VD: Nhu cầu hiện tại đã đủ số lượng',
+                    submitLabel: 'Xác nhận từ chối',
+                    fieldType: 'textarea' as const,
+                    required: true,
+                };
+            case 'handover-item-pledge':
+                return {
+                    title: 'Ghi nhận bàn giao hiện vật',
+                    description:
+                        'Nhập số lượng thực nhận để cập nhật tiến độ nhận hiện vật.',
+                    label: 'Số lượng thực nhận',
+                    placeholder: 'VD: 10',
+                    submitLabel: 'Lưu bàn giao',
+                    fieldType: 'number' as const,
+                    required: true,
+                };
+            case 'reject-registration':
+                return {
+                    title: 'Từ chối đăng ký sự kiện',
+                    description:
+                        'Nhập lý do để phản hồi rõ ràng cho sinh viên.',
+                    label: 'Lý do từ chối',
+                    placeholder: 'VD: Sự kiện đã đủ số lượng tham gia',
+                    submitLabel: 'Xác nhận từ chối',
+                    fieldType: 'textarea' as const,
+                    required: true,
+                };
+            case 'complete-registration':
+                return {
+                    title: 'Hoàn thành tham gia sự kiện',
+                    description:
+                        'Bạn có thể nhập số giờ tham gia, hoặc để trống nếu không cần ghi nhận giờ.',
+                    label: 'Số giờ tham gia',
+                    placeholder: 'VD: 4',
+                    submitLabel: 'Ghi nhận hoàn thành',
+                    fieldType: 'number' as const,
+                    required: false,
+                };
+        }
+    }, [actionDialog]);
+
+    const submitActionDialog = async () => {
+        if (!actionDialog) return;
+
+        const trimmedValue = actionDialog.value.trim();
+        setSubmittingActionDialog(true);
+
         try {
-            await completeEventRegistration(registrationId, {
-                hours,
-            });
-            addNotification({
-                type: 'success',
-                title: 'Đã ghi nhận hoàn thành sự kiện',
-                message: `Registration #${registrationId} đã hoàn thành`,
-            });
-            if (eventModuleId) {
-                await loadEventData(eventModuleId);
+            switch (actionDialog.kind) {
+                case 'reject-donation': {
+                    if (!trimmedValue) {
+                        throw new Error('Vui lòng nhập lý do từ chối.');
+                    }
+                    await rejectFundraisingDonation(
+                        actionDialog.targetId,
+                        trimmedValue,
+                    );
+                    addNotification({
+                        type: 'success',
+                        title: 'Đã từ chối khoản đóng góp',
+                        message: `Khoản đóng góp #${actionDialog.targetId} đã bị từ chối`,
+                    });
+                    if (fundraisingModuleId) {
+                        await loadFundraisingData(fundraisingModuleId);
+                    }
+                    break;
+                }
+                case 'reject-item-pledge': {
+                    if (!trimmedValue) {
+                        throw new Error('Vui lòng nhập lý do từ chối.');
+                    }
+                    await rejectItemPledge(actionDialog.targetId, trimmedValue);
+                    addNotification({
+                        type: 'success',
+                        title: 'Đã từ chối pledge hiện vật',
+                        message: `Pledge #${actionDialog.targetId} đã bị từ chối`,
+                    });
+                    if (itemModuleId) {
+                        await loadItemData(itemModuleId);
+                    }
+                    break;
+                }
+                case 'handover-item-pledge': {
+                    const parsedQuantity = Number(trimmedValue);
+                    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+                        throw new Error(
+                            'Số lượng thực nhận phải lớn hơn 0.',
+                        );
+                    }
+                    await handoverItemPledge(actionDialog.targetId, {
+                        received_quantity: parsedQuantity,
+                    });
+                    addNotification({
+                        type: 'success',
+                        title: 'Đã ghi nhận bàn giao',
+                        message: `Pledge #${actionDialog.targetId} đã cập nhật trạng thái đã nhận`,
+                    });
+                    if (itemModuleId) {
+                        await loadItemData(itemModuleId);
+                    }
+                    break;
+                }
+                case 'reject-registration': {
+                    if (!trimmedValue) {
+                        throw new Error('Vui lòng nhập lý do từ chối.');
+                    }
+                    await rejectEventRegistration(
+                        actionDialog.targetId,
+                        trimmedValue,
+                    );
+                    addNotification({
+                        type: 'success',
+                        title: 'Đã từ chối đăng ký sự kiện',
+                        message: `Registration #${actionDialog.targetId} đã bị từ chối`,
+                    });
+                    if (eventModuleId) {
+                        await loadEventData(eventModuleId);
+                    }
+                    break;
+                }
+                case 'complete-registration': {
+                    const hours =
+                        trimmedValue.length > 0
+                            ? Number(trimmedValue)
+                            : undefined;
+                    if (
+                        typeof hours !== 'undefined' &&
+                        (!Number.isFinite(hours) || hours < 0)
+                    ) {
+                        throw new Error(
+                            'Số giờ tham gia phải là số hợp lệ từ 0 trở lên.',
+                        );
+                    }
+                    await completeEventRegistration(actionDialog.targetId, {
+                        hours,
+                    });
+                    addNotification({
+                        type: 'success',
+                        title: 'Đã ghi nhận hoàn thành sự kiện',
+                        message: `Registration #${actionDialog.targetId} đã hoàn thành`,
+                    });
+                    if (eventModuleId) {
+                        await loadEventData(eventModuleId);
+                    }
+                    break;
+                }
             }
+
+            closeActionDialog();
         } catch (error) {
             addNotification({
                 type: 'error',
-                title: 'Hoàn thành sự kiện thất bại',
+                title: 'Thao tác thất bại',
                 message:
                     error instanceof Error ? error.message : 'Lỗi hệ thống',
             });
+            setSubmittingActionDialog(false);
         }
     };
 
@@ -1767,6 +1891,31 @@ export const CampaignsRoute = () => {
                         )}
                     </section>
                 </div>
+                {actionDialog && actionDialogConfig ? (
+                    <ActionDrawer
+                        open
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                closeActionDialog();
+                            }
+                        }}
+                        title={actionDialogConfig.title}
+                        description={actionDialogConfig.description}
+                        label={actionDialogConfig.label}
+                        value={actionDialog.value}
+                        onValueChange={(value) =>
+                            setActionDialog((current) =>
+                                current ? { ...current, value } : current,
+                            )
+                        }
+                        submitLabel={actionDialogConfig.submitLabel}
+                        placeholder={actionDialogConfig.placeholder}
+                        fieldType={actionDialogConfig.fieldType}
+                        required={actionDialogConfig.required}
+                        isSubmitting={submittingActionDialog}
+                        onSubmit={submitActionDialog}
+                    />
+                ) : null}
             </div>
         </ContentLayout>
     );

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNotifications } from '@/components/ui/notifications';
+import { ROLES, useUser } from '@/features/auth';
 import {
     createTemplate,
     deactivateTemplate,
@@ -64,6 +65,7 @@ const parseLayoutJson = (value: string) => {
 };
 
 export const CertificateTemplatesRoute = () => {
+    const user = useUser();
     const [templates, setTemplates] = useState<CertificateTemplate[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -77,6 +79,18 @@ export const CertificateTemplatesRoute = () => {
         useState<CertificateTemplateStatus>('ACTIVE');
     const [saving, setSaving] = useState(false);
     const { addNotification } = useNotifications();
+
+    if (!user.data) return null;
+
+    if (user.data.role !== ROLES.DOANTRUONG) {
+        return (
+            <ContentLayout title="Mẫu chứng nhận">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+                    Vai trò hiện tại không có quyền quản lý mẫu chứng nhận.
+                </div>
+            </ContentLayout>
+        );
+    }
 
     const editingTemplate = useMemo(
         () => templates.find((template) => template.id === editingId) ?? null,

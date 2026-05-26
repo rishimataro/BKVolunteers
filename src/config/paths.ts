@@ -103,6 +103,10 @@ export const paths = {
             path: 'my-donations',
             getHref: () => '/app/my-donations',
         },
+        donationPayment: {
+            path: 'donations/:donationId/payment',
+            getHref: (donationId: string) => `/app/donations/${donationId}/payment`,
+        },
         donate: {
             path: 'donate/:moduleId',
             getHref: (moduleId: string) => `/app/donate/${moduleId}`,

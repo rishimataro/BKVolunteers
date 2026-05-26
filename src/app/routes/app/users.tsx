@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 
 import { ContentLayout } from '@/components/layouts';
+import { ActionDrawer } from '@/components/ui/action-drawer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNotifications } from '@/components/ui/notifications';
@@ -65,6 +66,12 @@ export const UsersRoute = () => {
     const [statusFilter, setStatusFilter] = React.useState<CampaignStatus | ''>(
         'SUBMITTED',
     );
+    const [transitionDialog, setTransitionDialog] = React.useState<{
+        action: 'request-revision' | 'pre-approve' | 'approve' | 'reject';
+        value: string;
+    } | null>(null);
+    const [submittingTransition, setSubmittingTransition] =
+        React.useState(false);
 
     const canReview =
         user.data?.role === ROLES.DOANTRUONG || user.data?.role === ROLES.LCD;
@@ -147,16 +154,25 @@ export const UsersRoute = () => {
         action: 'request-revision' | 'pre-approve' | 'approve' | 'reject',
     ) => {
         if (!detail) return;
-        const reason =
-            window.prompt('Nhập lý do xử lý (có thể để trống):') ?? undefined;
+        setTransitionDialog({ action, value: '' });
+    };
+
+    const submitTransition = async () => {
+        if (!detail || !transitionDialog) return;
+        setSubmittingTransition(true);
         try {
-            await approvalTransition(detail.id, action, reason);
+            await approvalTransition(
+                detail.id,
+                transitionDialog.action,
+                transitionDialog.value.trim() || undefined,
+            );
             addNotification({
                 type: 'success',
                 title: 'Đã cập nhật trạng thái',
                 message: 'Thao tác duyệt đã được ghi nhận',
             });
             await Promise.all([loadQueue(), loadDetail(detail.id)]);
+            setTransitionDialog(null);
         } catch (error) {
             addNotification({
                 type: 'error',
@@ -164,6 +180,8 @@ export const UsersRoute = () => {
                 message:
                     error instanceof Error ? error.message : 'Lỗi hệ thống',
             });
+        } finally {
+            setSubmittingTransition(false);
         }
     };
 
@@ -384,6 +402,32 @@ export const UsersRoute = () => {
                         )}
                     </section>
                 </div>
+                {transitionDialog ? (
+                    <ActionDrawer
+                        open
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setTransitionDialog(null);
+                                setSubmittingTransition(false);
+                            }
+                        }}
+                        title="Ghi chú xử lý chiến dịch"
+                        description="Bạn có thể nhập lý do hoặc ghi chú nội bộ cho bước duyệt này."
+                        label="Lý do hoặc ghi chú"
+                        value={transitionDialog.value}
+                        onValueChange={(value) =>
+                            setTransitionDialog((current) =>
+                                current ? { ...current, value } : current,
+                            )
+                        }
+                        submitLabel="Xác nhận"
+                        placeholder="Có thể để trống nếu không cần"
+                        fieldType="textarea"
+                        required={false}
+                        isSubmitting={submittingTransition}
+                        onSubmit={submitTransition}
+                    />
+                ) : null}
             </div>
         </ContentLayout>
     );

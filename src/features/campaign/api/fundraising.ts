@@ -35,6 +35,21 @@ export const createMoneyDonation = (
         status: string;
     }>;
 
+export const getDonationById = (donationId: string) =>
+    api.get(`/fundraising/donations/${donationId}`) as Promise<{
+        id: string
+        status: string
+        payment_instruction?: {
+            payment_code?: string | null
+            transfer_content?: string | null
+            expires_at?: string | null
+            vietqr_url?: string | null
+            amount?: number
+            currency?: string
+        }
+        matched_transaction_id?: string | null
+    }>
+
 export const updateFundraisingConfig = (
     moduleId: string,
     payload: {

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Cpu } from 'lucide-react';
 import { ContentLayout } from '@/components/layouts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ROLES, useUser } from '@/features/auth';
 import {
     getBackgroundJobs,
     retryBackgroundJob,
@@ -34,6 +35,7 @@ const defaultStatusLabel = (s: string) =>
     s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export const BackgroundJobsRoute = () => {
+    const user = useUser();
     const { addNotification } = useNotifications();
     const [jobs, setJobs] = useState<BackgroundJobItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +50,18 @@ export const BackgroundJobsRoute = () => {
     const [retryingJobId, setRetryingJobId] = useState<number | null>(null);
 
     const limit = 20;
+
+    if (!user.data) return null;
+
+    if (user.data.role !== ROLES.DOANTRUONG) {
+        return (
+            <ContentLayout title="Tác vụ nền">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+                    Vai trò hiện tại không có quyền xem hoặc chạy tác vụ nền.
+                </div>
+            </ContentLayout>
+        );
+    }
 
     const loadJobs = async (p: number) => {
         setIsLoading(true);

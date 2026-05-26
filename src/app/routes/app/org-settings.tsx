@@ -1,7 +1,7 @@
-import { Shield, Users } from 'lucide-react';
+import { Building2, HeartHandshake, Shield } from 'lucide-react';
 
 import { ContentLayout } from '@/components/layouts';
-import { useUser } from '@/features/auth';
+import { ROLES, useUser } from '@/features/auth';
 
 const orgTypeLabel: Record<string, string> = {
     CLUB: 'CLB',
@@ -15,6 +15,16 @@ export const OrgSettingsRoute = () => {
     const u = user.data;
 
     if (!u) return null;
+
+    if (u.role !== ROLES.CLB) {
+        return (
+            <ContentLayout title="Thiết lập đơn vị">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+                    Vai trò hiện tại không có quyền truy cập thiết lập đơn vị.
+                </div>
+            </ContentLayout>
+        );
+    }
 
     return (
         <ContentLayout title="Thiết lập đơn vị">
@@ -64,27 +74,44 @@ export const OrgSettingsRoute = () => {
                 <div className="space-y-6">
                     <div className="rounded-xl border border-slate-200 bg-white p-6">
                         <div className="flex items-center gap-3">
-                            <Users className="h-5 w-5 text-[#2E5077]" />
+                            <HeartHandshake className="h-5 w-5 text-[#2E5077]" />
                             <h2 className="text-lg font-bold text-[#2E5077]">
-                                Quản lý thành viên
+                                Phạm vi quản trị hiện tại
                             </h2>
                         </div>
-                        <p className="mt-3 text-sm text-slate-500">
-                            Tính năng quản lý thành viên đơn vị sẽ được phát
-                            triển trong giai đoạn tiếp theo.
-                        </p>
+                        <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                            <li>- Tạo và quản lý chiến dịch của đơn vị.</li>
+                            <li>- Cấu hình gây quỹ, hiện vật và sự kiện.</li>
+                            <li>- Theo dõi đóng góp, pledge và đăng ký sự kiện.</li>
+                            <li>- Xem báo cáo thuộc phạm vi đơn vị.</li>
+                        </ul>
                     </div>
 
                     <div className="rounded-xl border border-slate-200 bg-white p-6">
                         <div className="flex items-center gap-3">
                             <Shield className="h-5 w-5 text-[#2E5077]" />
                             <h2 className="text-lg font-bold text-[#2E5077]">
-                                Phân quyền
+                                Hỗ trợ vận hành
                             </h2>
                         </div>
                         <p className="mt-3 text-sm text-slate-500">
-                            Tính năng phân quyền cho thành viên sẽ được phát
-                            triển trong giai đoạn tiếp theo.
+                            Nếu cần cập nhật cơ cấu thành viên, phân quyền nội
+                            bộ hoặc thay đổi trạng thái đơn vị, hãy liên hệ quản
+                            trị cấp trường để được hỗ trợ.
+                        </p>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-white p-6">
+                        <div className="flex items-center gap-3">
+                            <Building2 className="h-5 w-5 text-[#2E5077]" />
+                            <h2 className="text-lg font-bold text-[#2E5077]">
+                                Gợi ý cấu hình
+                            </h2>
+                        </div>
+                        <p className="mt-3 text-sm text-slate-500">
+                            Trước khi mở chiến dịch mới, hãy kiểm tra lại thông
+                            tin đơn vị ở đây để bảo đảm tên, mã và khoa hiển thị
+                            đúng trên trang công khai và báo cáo tổng hợp.
                         </p>
                     </div>
                 </div>
